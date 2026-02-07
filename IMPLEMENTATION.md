@@ -155,6 +155,19 @@ Draw everything in white first, then apply the overlay. White pixels take the ov
 
 For games with line-based graphics, draw vertex arrays using `moveTo`/`lineTo` with rotation transforms. Add CRT phosphor glow via multiple passes at decreasing opacity and increasing `lineWidth` + blur.
 
+### Monochrome Rectangle-Based (Pong)
+
+For games with no sprites at all — just rectangles (paddles, ball, net dashes) — everything is drawn with `ctx.fillRect()`. This is the simplest rendering approach: white on black, no sprite data needed beyond score digits and text characters. Add a CRT scanline overlay for authenticity:
+
+```javascript
+ctx.fillStyle = 'rgba(0,0,0,0.15)';
+for (let y = 0; y < LOGICAL_HEIGHT; y += 2) {
+    ctx.fillRect(0, y, LOGICAL_WIDTH, 1);
+}
+```
+
+For block-letter titles (e.g., "PONG"), define inline pixel grids and render with a helper that scales each cell to s×s pixels, rather than creating full sprite data. This keeps the code lightweight for simple games.
+
 ---
 
 ## Sound Engine Pattern
@@ -300,6 +313,10 @@ git branch -D section/foundations
 4. **Tab-away time spiral** — Without `MAX_DELTA` clamping, switching tabs for 30 seconds builds up a huge delta. The accumulator then runs hundreds of updates at once, which can freeze or break the game. Always clamp.
 
 5. **Object.freeze and self-references** — You can't reference other keys inside `Object.freeze({})`. Compute derived values explicitly: write `WIDTH: 672` not `WIDTH: this.LOGICAL_WIDTH * this.SCALE`.
+
+6. **Dual-size font glyphs** — If the game needs large score digits (7-segment, e.g., 8×12 pixels) AND inline text containing numbers (e.g., "FIRST TO 11 WINS"), you need digits in TWO sizes. The score renderer uses large `FONT_DIGITS`; the text renderer (`drawText`) uses a uniform-sized `FONT_ALPHA` that includes its own small digit characters ('0'-'9'). Mixing sizes in a single `drawText` call produces garbled output.
+
+7. **Ball/entity sticking on paddle/wall collisions** — After reversing velocity, always reposition the entity just outside the collision surface. Without this, the entity can remain inside the collider and trigger the same collision on the next frame, causing it to vibrate or get stuck.
 
 ### Testing Tips
 

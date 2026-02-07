@@ -138,9 +138,33 @@ After all 3 agents complete:
 
 - **NEVER skip the research phase**. The difference between a good recreation and an authentic one is in the details that only research reveals (scoring tables, speed curves, attract animations).
 - **ALWAYS define interface contracts before building**. This is what makes parallel implementation work without merge conflicts.
-- **ALWAYS use `'use strict'`** at the top of game.js.
 - **ALWAYS use `Object.freeze()`** for CONFIG.
 - **NO external dependencies**. No images, no audio files, no libraries. Everything procedural.
 - **Collision return values must be checked by callers**. If a collision function returns true, the caller must also update the entity state (e.g., `bomb.alive = false`).
 - **Web Audio init on first user gesture**, not page load.
 - **Test in browser via Playwright** before committing. Every game must render and be playable.
+
+## Lessons from Past Builds
+
+### Font/Glyph Size Consistency (from Pong build)
+If a game needs both **large score digits** (7-segment style, e.g., 8×12) and **inline text** (e.g., "FIRST TO 11 WINS"), you need TWO sets of digit glyphs at different sizes. The score renderer uses the large FONT_DIGITS directly, while the text renderer (drawText) should use a uniform-sized FONT_ALPHA that includes its own 5×7 digit characters ('0'-'9'). If you only provide large-format digits in FONT_DIGITS, inline text mixing letters and numbers will look broken. **Define this in the interface contracts** — specify which font data each renderer uses and at what size.
+
+### Simpler Games Still Follow 10 Sections
+Even very simple games like Pong (~1200 lines vs 2500+ for Space Invaders) follow the full 10-section architecture. Some sections are just much shorter (e.g., Pong's collision system is ~60 lines vs 200+ for Space Invaders). Don't collapse sections — the consistent structure makes every game navigable.
+
+### AI Opponents for Single-Player Browser Games
+Many classic arcade games were 2-player only (Pong, early sports games). Since browser games typically lack a second human player, add an AI opponent. Design the AI to be beatable but not trivial:
+- Use a reaction distance (AI only moves when ball/threat is within range)
+- Add a dead zone to prevent jitter (small threshold before AI reacts)
+- Limit AI speed slightly below player speed for fairness
+- The AI should track the game object's position, not predict perfectly
+
+### Pre-CPU Hardware Games (Pong, Breakout)
+Games from before ~1975 had **no CPU** — they were entirely hardwired circuits. When researching these, there's no ROM to disassemble. Instead focus on:
+- **Circuit analysis** documentation (how counters and flip-flops produced game behavior)
+- **Observable behavior** from video recordings and emulators
+- **Patent filings** (often contain detailed circuit diagrams and behavior descriptions)
+The key insight: hardware-level behaviors like "ball travels faster at steep angles" (because horizontal and vertical counters are independent) should be replicated, not "fixed" to normalize speed.
+
+### Parallel Agent Text Rendering
+When assigning the game-engine agent (sections 7-10), explicitly tell it to create a FONT_ALPHA with ALL characters needed for UI text, including digits at the same size as letters. List every string that will appear on screen (attract text, game over text, HUD labels) so the agent knows exactly which characters to include. Missing characters result in invisible text that's hard to debug from screenshots alone.
