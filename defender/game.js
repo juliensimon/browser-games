@@ -2138,10 +2138,10 @@ class Renderer {
         const controlsY = 120;
         this.drawTextCentered('CONTROLS', controlsY, CONFIG.COLOR_TEXT, 1);
         this.drawText('ARROWS  MOVE', 70, controlsY + 12, '#aaaaaa');
-        this.drawText('SPACE   FIRE', 70, controlsY + 22, '#aaaaaa');
-        this.drawText('D OR Z  SMART BOMB', 70, controlsY + 32, '#aaaaaa');
-        this.drawText('H       HYPERSPACE', 70, controlsY + 42, '#aaaaaa');
-        this.drawText('H       HYPERSPACE', 70, controlsY + 62, '#aaaaaa');
+        this.drawText('SHIFT   THRUST', 70, controlsY + 22, '#aaaaaa');
+        this.drawText('SPACE   FIRE', 70, controlsY + 32, '#aaaaaa');
+        this.drawText('D OR Z  SMART BOMB', 70, controlsY + 42, '#aaaaaa');
+        this.drawText('H       HYPERSPACE', 70, controlsY + 52, '#aaaaaa');
 
         // High score
         if (state.hiScore > 0) {

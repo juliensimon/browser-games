@@ -199,3 +199,21 @@ Games with horizontally scrolling worlds (Defender, Scramble) need careful coord
 - `worldToScreen()` must handle wrapping (entity near x=0 visible from camera near x=WORLD_WIDTH)
 - Terrain must use seamless-wrap frequencies (integer multiples of TAU/WORLD_WIDTH for sine-based terrain)
 - The scanner/minimap is a compressed view of the entire world — entity dots use world-space positions divided by compression ratio
+
+### Research — ROM Disassembly and FPGA Sources (from Centipede build)
+Go beyond wikis and gameplay videos. The most accurate game behavior details come from:
+- **ROM disassembly sites** like `6502disassembly.com` — contain annotated source code for classic 6502/6809 games with detailed comments on game logic, timing tables, scoring formulas, and sprite data
+- **FPGA recreation projects** on GitHub (search `fpga-<game>` or `<game>-fpga`) — these contain extremely detailed hardware documentation including exact color palettes, sprite dimensions, timing specifications, and behavioral state machines that must be pixel-accurate to the original hardware
+- **computerarcheology.com** — detailed ROM walkthroughs with memory maps, AI state machines, and input handling for many classic arcade games
+Include these sources in the research phase and reference specific timing/scoring values from them in the plan's CONFIG section.
+
+### Cross-Agent Interface Mismatches (from Centipede build)
+When agents build sections independently, the most common integration bugs are **API mismatches** between what one agent provides and another expects:
+1. **Method calls vs property access**: If the InputHandler defines `isLeft()` as a method, all entity agents must call `input.isLeft()`, not `input.left`. Specify in the interface contract whether APIs are methods or properties.
+2. **Namespaced vs bare function calls**: If `rectsOverlap` lives in `MathUtils`, agents must call `MathUtils.rectsOverlap()`, not bare `rectsOverlap()`. The entity/collision agents are most likely to get this wrong since they didn't write the utility code.
+3. **Function signatures**: If `pixelToGrid(x, y)` returns `{ col, row }`, collision code must destructure the return value, not call it with one argument. Include return types in the interface contracts.
+4. **FONT namespace**: If the plan says `SPRITES.FONT`, the foundations agent must put font data inside the SPRITES object (not a separate `const FONT`). Or vice versa — pick one and be explicit.
+To prevent these: include **usage examples** (not just signatures) in the interface contracts for any function/method that crosses section boundaries.
+
+### Attract Screen Controls Display
+Always show control information on the attract screen. Players need to know how to move and fire before starting. Use a compact format like "ARROWS OR WASD MOVE" / "SPACE FIRE" in the game's accent color. This is especially important since these are browser games with no physical cabinet instructions.
