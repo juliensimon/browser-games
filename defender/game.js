@@ -26,7 +26,7 @@ const CONFIG = Object.freeze({
     PLAYER_VERTICAL_SPEED: 2,
     PLAYER_DRAG: 0.98,
     PLAYER_WIDTH: 16,
-    PLAYER_HEIGHT: 5,
+    PLAYER_HEIGHT: 6,
     PLAYER_START_Y: 120,
     PLAYER_INVULN_TIME: 3000,
     PLAYER_BLINK_RATE: 100,
@@ -176,23 +176,24 @@ const MathUtils = {
 // ============================================================================
 
 const SPRITES = {
-    // Player ship facing right (16x5) — authentic Defender "pencil" shape
-    // Sharp pointed nose, narrow elongated body, split rear exhaust fins
+    // Player ship facing right (16x6) — ROM-derived, engine point at left, blunt nose at right
     PLAYER_RIGHT: [
-        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
-        [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+        [0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+        [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0],
     ],
 
-    // Player ship facing left (16x5) — mirror of right
+    // Player ship facing left (16x6) — mirror of right, engine point at right
     PLAYER_LEFT: [
-        [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-        [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],
+        [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0],
+        [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1],
+        [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0],
     ],
 
     // Lander (8x8) — round/oval UFO shape with antenna-like protrusions
@@ -325,15 +326,16 @@ const SPRITES = {
         ],
     ],
 
-    // Player explosion frames (2 frames, 16x5) — ship breaking apart
+    // Player explosion frames (2 frames, 16x6) — ship breaking apart
     PLAYER_EXPLOSION: [
         // Frame 0: ship cracking apart
         [
             [0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0],
-            [0,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0],
-            [1,0,1,1,1,0,1,1,0,1,1,1,0,1,0,1],
-            [0,0,1,0,0,1,1,0,1,1,0,1,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0],
+            [0,0,0,0,0,1,0,0,0,0,1,0,1,1,0,0],
+            [0,0,0,1,0,1,1,0,1,1,0,1,0,1,0,1],
+            [0,0,1,0,1,0,1,1,0,1,1,0,1,0,0,0],
+            [1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0],
+            [0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0],
         ],
         // Frame 1: fully fragmented
         [
@@ -342,6 +344,7 @@ const SPRITES = {
             [1,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0],
             [0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0],
             [0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0],
+            [0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,1],
         ],
     ],
 
@@ -366,6 +369,12 @@ function generateTerrain() {
 }
 
 SPRITES.TERRAIN = generateTerrain();
+
+// Get terrain surface Y at a given world X (the visible ground level)
+function terrainSurfaceY(worldX) {
+    const idx = Math.floor(MathUtils.wrapWorld(worldX));
+    return CONFIG.TERRAIN_Y - SPRITES.TERRAIN[idx];
+}
 
 // Bitmap font — 5x5 pixel glyphs for A-Z, 0-9, and space
 const FONT = {
@@ -1109,7 +1118,7 @@ class Player {
 
         // Apply movement
         this.x = MathUtils.wrapWorld(this.x + this.vx);
-        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM - CONFIG.PLAYER_HEIGHT);
+        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, terrainSurfaceY(this.x) - CONFIG.PLAYER_HEIGHT);
 
         // Invulnerability timer
         if (this.invulnerable) {
@@ -1289,7 +1298,7 @@ class Lander {
         }
 
         this.x = MathUtils.wrapWorld(this.x + this.vx);
-        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM);
+        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, terrainSurfaceY(this.x) - 8);
     }
 
     fire(playerX, playerY) {
@@ -1343,7 +1352,7 @@ class Mutant {
         this.vy = MathUtils.clamp(this.vy, -CONFIG.MUTANT_SPEED, CONFIG.MUTANT_SPEED);
 
         this.x = MathUtils.wrapWorld(this.x + this.vx);
-        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM);
+        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, terrainSurfaceY(this.x) - 8);
     }
 
     fire(playerX, playerY) {
@@ -1402,7 +1411,7 @@ class Baiter {
         }
 
         this.x = MathUtils.wrapWorld(this.x + this.vx);
-        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM);
+        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, terrainSurfaceY(this.x) - 8);
     }
 
     fire(playerX, playerY) {
@@ -1444,7 +1453,7 @@ class Bomber {
         this.y = MathUtils.clamp(
             this.baseY + Math.sin(this.sinePhase) * 30,
             CONFIG.PLAY_AREA_TOP,
-            CONFIG.PLAY_AREA_BOTTOM
+            terrainSurfaceY(this.x) - 8
         );
     }
 
@@ -1493,7 +1502,7 @@ class Pod {
         this.vx = MathUtils.clamp(this.vx, -CONFIG.POD_SPEED, CONFIG.POD_SPEED);
         this.vy = MathUtils.clamp(this.vy, -CONFIG.POD_SPEED, CONFIG.POD_SPEED);
         this.x = MathUtils.wrapWorld(this.x + this.vx);
-        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM);
+        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, terrainSurfaceY(this.x) - 8);
     }
 
     getRect() {
@@ -1528,7 +1537,7 @@ class Swarmer {
         this.vy = MathUtils.clamp(this.vy, -CONFIG.SWARMER_SPEED, CONFIG.SWARMER_SPEED);
 
         this.x = MathUtils.wrapWorld(this.x + this.vx);
-        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM);
+        this.y = MathUtils.clamp(this.y + this.vy, CONFIG.PLAY_AREA_TOP, terrainSurfaceY(this.x) - 8);
     }
 
     fire(playerX, playerY) {
@@ -2084,14 +2093,33 @@ class Renderer {
                 const sprite = state.player.facing === 1 ? SPRITES.PLAYER_RIGHT : SPRITES.PLAYER_LEFT;
                 this.drawSprite(sprite, psx, state.player.y, CONFIG.COLOR_PLAYER);
 
-                // Draw thrust flame
+                // Draw engine exhaust glow (always visible, per original ROM palette)
+                if (state.player.facing === 1) {
+                    // Right-facing: exhaust at LEFT rear (engine point)
+                    ctx.fillStyle = '#ff55ff'; // Magenta
+                    ctx.fillRect(Math.round(psx + 3), Math.round(state.player.y + 3), 1, 1);
+                    ctx.fillStyle = '#ffff55'; // Yellow
+                    ctx.fillRect(Math.round(psx + 4), Math.round(state.player.y + 3), 1, 1);
+                    ctx.fillStyle = '#5555ff'; // Blue engine glow
+                    ctx.fillRect(Math.round(psx), Math.round(state.player.y + 4), 2, 1);
+                } else {
+                    // Left-facing: exhaust at RIGHT rear (engine point)
+                    ctx.fillStyle = '#ff55ff';
+                    ctx.fillRect(Math.round(psx + 12), Math.round(state.player.y + 3), 1, 1);
+                    ctx.fillStyle = '#ffff55';
+                    ctx.fillRect(Math.round(psx + 11), Math.round(state.player.y + 3), 1, 1);
+                    ctx.fillStyle = '#5555ff';
+                    ctx.fillRect(Math.round(psx + 14), Math.round(state.player.y + 4), 2, 1);
+                }
+
+                // Draw thrust flame (when moving)
                 if (state.player.thrustActive) {
                     const flameX = state.player.facing === 1 ? psx - 3 : psx + CONFIG.PLAYER_WIDTH + 1;
                     const flameW = 2 + Math.random() * 2;
                     ctx.fillStyle = '#ff6600';
-                    ctx.fillRect(Math.round(flameX), Math.round(state.player.y + 3), Math.round(flameW), 2);
+                    ctx.fillRect(Math.round(flameX), Math.round(state.player.y + 4), Math.round(flameW), 2);
                     ctx.fillStyle = '#ffff00';
-                    ctx.fillRect(Math.round(flameX), Math.round(state.player.y + 3), 1, 2);
+                    ctx.fillRect(Math.round(flameX), Math.round(state.player.y + 4), 1, 2);
                 }
             }
         }
@@ -2516,7 +2544,7 @@ class Game {
         // Hyperspace
         if (this.input.justPressed('KeyH')) {
             this.player.x = MathUtils.randomInt(0, CONFIG.WORLD_WIDTH - 1);
-            this.player.y = MathUtils.randomInt(CONFIG.PLAY_AREA_TOP + 20, CONFIG.PLAY_AREA_BOTTOM - 20);
+            this.player.y = MathUtils.randomInt(CONFIG.PLAY_AREA_TOP + 20, CONFIG.TERRAIN_Y - 30);
             this.player.vx = 0;
             this.sound.hyperspace();
             // Chance of death on re-entry
@@ -2651,7 +2679,7 @@ class Game {
         if (this.baiterTimer <= 0) {
             this.baiterTimer = CONFIG.BAITER_SPAWN_DELAY / 2; // Faster after first
             const bx = MathUtils.wrapWorld(this.player.x + (Math.random() < 0.5 ? -200 : 200));
-            const by = MathUtils.randomInt(CONFIG.PLAY_AREA_TOP, CONFIG.PLAY_AREA_BOTTOM);
+            const by = MathUtils.randomInt(CONFIG.PLAY_AREA_TOP, CONFIG.TERRAIN_Y - 30);
             this.baiters.push(new Baiter(bx, by));
         }
 

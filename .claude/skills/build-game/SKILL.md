@@ -217,3 +217,20 @@ To prevent these: include **usage examples** (not just signatures) in the interf
 
 ### Attract Screen Controls Display
 Always show control information on the attract screen. Players need to know how to move and fire before starting. Use a compact format like "ARROWS OR WASD MOVE" / "SPACE FIRE" in the game's accent color. This is especially important since these are browser games with no physical cabinet instructions.
+
+### Ship/Sprite Orientation — Nose vs Engine (from Defender build)
+Many classic arcade ships have **asymmetric silhouettes** where the wide/blunt end is the NOSE (front, direction of travel) and the tapered point is the ENGINE/EXHAUST (rear). This is the opposite of a typical arrow. The original Defender ship has a wide flat front and narrows to an exhaust point at the back. When deriving sprites from ROM data:
+- **Verify orientation** by cross-referencing MAME gameplay screenshots — watch which direction the ship moves and confirm which end leads
+- **The tapered/pointed end is usually the engine**, not the nose — engines concentrate thrust through a nozzle
+- **Exhaust glow overlays** (magenta/yellow/blue accent pixels) go at the engine/pointed end, not the nose
+- **Laser spawn position** should be at the NOSE (wide/blunt front edge): `this.x + CONFIG.PLAYER_WIDTH` for right-facing, `this.x` for left-facing
+- **Thrust flames** also go at the engine/pointed end — same side as the exhaust glow
+- If the sprite looks wrong after ROM derivation, check orientation FIRST before redesigning the sprite shape
+
+### Playwright Testing of Canvas Games (from Defender build)
+Testing canvas-based games with Playwright is tricky because the player dies almost instantly from enemy collisions. To get stable test screenshots:
+1. **Patch `CollisionSystem.checkPlayerCollisions`** to `return false` BEFORE calling `startGame()` — this makes the player immortal without the invulnerability blink effect
+2. **Do it in one atomic `page.evaluate()`** — if you set invulnerability in a separate call, the game loop can kill the player between your evaluates
+3. **Position the player with `game.player.x = game.cameraX + 146`** to center them on screen
+4. **Use `game.player.fire()` directly** rather than keyboard simulation — Playwright's `keyboard.press()` fires keydown+keyup synchronously which can miss `justPressed` detection in snapshot-comparison input handlers
+5. **Don't set `game.player.invulnerable = false`** until after patching collision — any gap lets enemies kill the player
