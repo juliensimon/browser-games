@@ -8,6 +8,7 @@ Classic arcade games recreated in the browser with vanilla JavaScript and HTML5 
 
 | Game | Year | Description | Play |
 |------|------|-------------|------|
+| [Computer Space](computer-space/) | 1971 | The Nutting Associates original. The first commercially sold coin-operated video game. Newtonian physics with discrete 16-direction rotation, guided missiles, two AI saucers, time-based rounds, and monochrome CRT visuals with phosphor glow and scanlines. | Open `computer-space/index.html` |
 | [Pong](pong/) | 1972 | The Atari original. The first commercially successful video game. Authentic 8-segment paddle deflection, progressive ball acceleration, monochrome CRT visuals with scanline effects, and square wave audio matching the original hardware tones. | Open `pong/index.html` |
 | [Space Invaders](space-invaders/) | 1978 | The Taito classic. Defend Earth from descending alien formations with your laser cannon. Pixel-accurate sprites, destructible shields with pixel-level erosion, cellophane color overlay, and attract screen gag animations from the original ROM. | Open `space-invaders/index.html` |
 | [Asteroids](asteroids/) | 1979 | The Atari classic. Pilot your ship through an asteroid field, blast rocks into fragments, and dodge UFOs. Vector-style graphics with phosphor glow effects, inertial physics, and hyperspace. | Open `asteroids/index.html` |
