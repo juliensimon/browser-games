@@ -393,6 +393,17 @@ const SPRITES = {
         [0,0,0,1,0,0],
     ],
 
+    // Upside-down Y for the attract screen "PLAY" gag
+    Y_FLIPPED: [
+        [0,0,1,0,0],
+        [0,0,1,0,0],
+        [0,0,1,0,0],
+        [0,0,1,0,0],
+        [0,0,1,0,0],
+        [0,1,0,1,0],
+        [1,0,0,0,1],
+    ],
+
     // Bitmap font — each glyph is 7 rows x 5 cols (unless noted)
     FONT: {
         'A': [
@@ -1715,8 +1726,16 @@ class Renderer {
     // ── Screens ─────────────────────────────────────────────
 
     drawAttractScreen(ctx, state) {
-        // Title
-        this.drawCenteredText(ctx, 'PLAY', 48, CONFIG.COLOR_WHITE);
+        const anim = state.attractAnim;
+
+        // ── Title: "PLAY" ──
+        // During play_y animation, we handle the Y specially
+        if (anim === 'play_y') {
+            this.drawAttractPlayTitle(ctx, state);
+        } else {
+            this.drawCenteredText(ctx, 'PLAY', 48, CONFIG.COLOR_WHITE);
+        }
+
         this.drawCenteredText(ctx, 'SPACE  INVADERS', 64, CONFIG.COLOR_WHITE);
 
         // Score advance table
@@ -1744,9 +1763,87 @@ class Renderer {
         this.drawSprite(ctx, SPRITES.OCTOPUS, tableX + 2, tableY, CONFIG.COLOR_WHITE);
         this.drawText(ctx, '=10 POINTS', tableX + 20, tableY, CONFIG.COLOR_WHITE);
 
-        // Blinking "PRESS ENTER"
-        if (Math.floor(this.frameCount / 30) % 2 === 0) {
-            this.drawCenteredText(ctx, 'PRESS ENTER', 200, CONFIG.COLOR_WHITE);
+        // ── Bottom text: "PRESS ENTER" or "INSERT CCOIN" gag ──
+        if (anim === 'ccoin') {
+            this.drawCCoinAnim(ctx, state);
+        } else {
+            // Blinking "PRESS ENTER"
+            if (Math.floor(this.frameCount / 30) % 2 === 0) {
+                this.drawCenteredText(ctx, 'PRESS ENTER', 200, CONFIG.COLOR_WHITE);
+            }
+        }
+    }
+
+    // ── "INSERT CCOIN" gag rendering ──────────────────────
+
+    drawCCoinAnim(ctx, state) {
+        const textY = 225;
+
+        // Draw the text — "INSERT  CCOIN" or "INSERT  COIN" if corrected
+        if (state.attractCCorrected) {
+            this.drawCenteredText(ctx, 'INSERT  COIN', textY, CONFIG.COLOR_WHITE);
+        } else {
+            this.drawCenteredText(ctx, 'INSERT  CCOIN', textY, CONFIG.COLOR_WHITE);
+        }
+
+        // Draw explosion at the C position in phase 3
+        if (state.attractAnimPhase === 3) {
+            const textW = this.measureText('INSERT  CCOIN');
+            const textStartX = Math.floor((CONFIG.LOGICAL_WIDTH - textW) / 2);
+            const prefixW = this.measureText('INSERT  ');
+            const cX = textStartX + prefixW;
+            this.drawSprite(ctx, SPRITES.BOMB_EXPLODE, cX - 1, textY - 1, CONFIG.COLOR_WHITE);
+        }
+
+        // Draw the alien (squid)
+        if (state.attractAlienX > -16 && state.attractAlienX < CONFIG.LOGICAL_WIDTH + 16) {
+            const alienSprite = state.attractAlienFrame === 0 ? SPRITES.SQUID : SPRITES.SQUID_ALT;
+            this.drawSprite(ctx, alienSprite, Math.floor(state.attractAlienX), Math.floor(state.attractAlienY), CONFIG.COLOR_WHITE);
+        }
+
+        // Draw the bomb
+        if (state.attractBombAlive) {
+            ctx.fillStyle = CONFIG.COLOR_WHITE;
+            ctx.fillRect(Math.floor(state.attractAlienX) + 4, Math.floor(state.attractBombY), 1, 4);
+        }
+    }
+
+    // ── "PLAY" upside-down Y gag rendering ────────────────
+
+    drawAttractPlayTitle(ctx, state) {
+        // Draw "PLA" normally
+        const playW = this.measureText('PLAY');
+        const playStartX = Math.floor((CONFIG.LOGICAL_WIDTH - playW) / 2);
+        this.drawText(ctx, 'PLA', playStartX, 48, CONFIG.COLOR_WHITE);
+
+        // Determine which Y to draw and where
+        const phase = state.attractAnimPhase;
+
+        if (phase <= 2 && !state.attractYCorrected) {
+            // Draw the upside-down Y at current letter position
+            // During phase 2 (dragging), the letter follows the alien
+            const lx = Math.floor(state.attractLetterX);
+            const ly = Math.floor(state.attractLetterY);
+            if (lx > -8 && lx < CONFIG.LOGICAL_WIDTH + 8) {
+                this.drawSprite(ctx, SPRITES.Y_FLIPPED, lx, ly, CONFIG.COLOR_WHITE);
+            }
+        } else if (phase === 3) {
+            // Alien returning with correct Y — draw it at current letter position
+            const lx = Math.floor(state.attractLetterX);
+            if (lx > -8 && lx < CONFIG.LOGICAL_WIDTH + 8) {
+                this.drawSprite(ctx, SPRITES.FONT['Y'], lx, 48, CONFIG.COLOR_WHITE);
+            }
+        } else if (phase >= 4) {
+            // Corrected — draw normal Y in final position
+            const plaPreW = this.measureText('PLA');
+            const finalX = playStartX + plaPreW + 3;
+            this.drawSprite(ctx, SPRITES.FONT['Y'], finalX, 48, CONFIG.COLOR_WHITE);
+        }
+
+        // Draw the alien (squid)
+        if (state.attractAlienX > -16 && state.attractAlienX < CONFIG.LOGICAL_WIDTH + 16) {
+            const alienSprite = state.attractAlienFrame === 0 ? SPRITES.SQUID : SPRITES.SQUID_ALT;
+            this.drawSprite(ctx, alienSprite, Math.floor(state.attractAlienX), Math.floor(state.attractAlienY), CONFIG.COLOR_WHITE);
         }
     }
 
@@ -1786,6 +1883,22 @@ class Game {
         this.gameOverTimer = 0;
         this.alienFireTimer = 0;
         this.extraLifeAwarded = false;
+
+        // Attract screen animation state
+        this.attractPassCount = 0;     // How many attract cycles completed
+        this.attractTimer = 0;         // Timer within current attract pass
+        this.attractAnim = 'idle';     // 'idle', 'ccoin', 'play_y'
+        this.attractAnimPhase = 0;     // Sub-phase of current animation
+        this.attractAnimTimer = 0;     // Timer within current phase
+        this.attractAlienX = 0;        // Animated alien position
+        this.attractAlienY = 0;
+        this.attractAlienFrame = 0;    // Alien animation frame (0/1)
+        this.attractBombY = 0;         // Bomb position for CCOIN gag
+        this.attractBombAlive = false;
+        this.attractLetterX = 0;       // Letter position for PLAY gag
+        this.attractLetterY = 0;
+        this.attractCCorrected = false; // Has the extra C been destroyed?
+        this.attractYCorrected = false; // Has the upside-down Y been fixed?
     }
 
     startGame() {
@@ -1856,7 +1969,198 @@ class Game {
             this.sound.init();
         }
         if (this.input.isStart()) {
+            this.attractPassCount = 0;
+            this.attractAnim = 'idle';
             this.startGame();
+            return;
+        }
+
+        this.attractTimer++;
+
+        // Toggle alien animation frame every 16 ticks
+        if (this.attractTimer % 16 === 0) {
+            this.attractAlienFrame = 1 - this.attractAlienFrame;
+        }
+
+        // Attract cycle: 10 seconds idle, then possibly an animation
+        // First pass is always idle. After that, alternate ccoin/play_y gags.
+        if (this.attractAnim === 'idle') {
+            // After 10 seconds (600 frames), start next animation if applicable
+            if (this.attractTimer >= 600) {
+                this.attractTimer = 0;
+                this.attractPassCount++;
+                // Gags start from pass 1 (not the very first pass)
+                if (this.attractPassCount >= 1) {
+                    if (this.attractPassCount % 2 === 1) {
+                        this.startCCoinAnim();
+                    } else {
+                        this.startPlayYAnim();
+                    }
+                }
+            }
+        } else if (this.attractAnim === 'ccoin') {
+            this.updateCCoinAnim();
+        } else if (this.attractAnim === 'play_y') {
+            this.updatePlayYAnim();
+        }
+    }
+
+    // ── "INSERT CCOIN" Animation ──────────────────────────
+    // A small squid flies in and bombs the extra C.
+
+    startCCoinAnim() {
+        this.attractAnim = 'ccoin';
+        this.attractAnimPhase = 0;  // 0=show text, 1=alien flies in, 2=bomb drops, 3=C explodes, 4=linger
+        this.attractAnimTimer = 0;
+        this.attractCCorrected = false;
+        // Alien starts off-screen right, will fly to above the extra C
+        this.attractAlienX = CONFIG.LOGICAL_WIDTH + 8;
+        this.attractAlienY = 210;
+    }
+
+    updateCCoinAnim() {
+        this.attractAnimTimer++;
+
+        // Target X: the extra C in "INSERT  CCOIN" — the first C of "CC"
+        // "INSERT  CCOIN" is centered. Let's compute where the first C of CC is.
+        const textW = this.renderer.measureText('INSERT  CCOIN');
+        const textStartX = Math.floor((CONFIG.LOGICAL_WIDTH - textW) / 2);
+        // "INSERT  " = 8 chars. Each char is ~8px. The C is the 9th character.
+        // But we need to measure precisely using the font widths.
+        const prefixW = this.renderer.measureText('INSERT  ');
+        const targetCX = textStartX + prefixW;
+
+        switch (this.attractAnimPhase) {
+            case 0: // Show "INSERT  CCOIN" for 1 second
+                if (this.attractAnimTimer >= 60) {
+                    this.attractAnimPhase = 1;
+                    this.attractAnimTimer = 0;
+                }
+                break;
+
+            case 1: // Alien flies in from right toward above the extra C
+                this.attractAlienX -= 1.5;
+                if (this.attractAlienX <= targetCX) {
+                    this.attractAlienX = targetCX;
+                    this.attractAnimPhase = 2;
+                    this.attractAnimTimer = 0;
+                    this.attractBombAlive = true;
+                    this.attractBombY = this.attractAlienY + 8;
+                }
+                break;
+
+            case 2: // Bomb drops toward the text at y=225
+                this.attractBombY += 2;
+                if (this.attractBombY >= 225) {
+                    this.attractBombAlive = false;
+                    this.attractCCorrected = true;
+                    this.attractAnimPhase = 3;
+                    this.attractAnimTimer = 0;
+                }
+                break;
+
+            case 3: // Show explosion briefly (30 frames)
+                if (this.attractAnimTimer >= 30) {
+                    this.attractAnimPhase = 4;
+                    this.attractAnimTimer = 0;
+                }
+                break;
+
+            case 4: // Alien flies away to the left, linger with corrected text
+                this.attractAlienX -= 2;
+                if (this.attractAlienX < -16) {
+                    // Linger with "INSERT  COIN" for 2 seconds then return to idle
+                    if (this.attractAnimTimer >= 120) {
+                        this.attractAnim = 'idle';
+                        this.attractTimer = 0;
+                    }
+                }
+                break;
+        }
+    }
+
+    // ── Upside-down Y Animation ──────────────────────────
+    // "PLAY" shows with flipped Y, alien drags it away and brings back correct Y.
+
+    startPlayYAnim() {
+        this.attractAnim = 'play_y';
+        this.attractAnimPhase = 0;  // 0=show bad Y, 1=alien flies in, 2=drag off, 3=return with Y, 4=place Y, 5=linger
+        this.attractAnimTimer = 0;
+        this.attractYCorrected = false;
+        // Alien starts off-screen left
+        this.attractAlienX = -16;
+        this.attractAlienY = 48;  // Same Y as "PLAY" text
+        // Compute Y position in "PLAY" — it's the 4th character
+        const playW = this.renderer.measureText('PLAY');
+        const playStartX = Math.floor((CONFIG.LOGICAL_WIDTH - playW) / 2);
+        const plaPreW = this.renderer.measureText('PLA');
+        this.attractLetterX = playStartX + plaPreW + 3; // +3 for the spacing after A
+        this.attractLetterY = 48;
+    }
+
+    updatePlayYAnim() {
+        this.attractAnimTimer++;
+        const targetX = this.attractLetterX;
+
+        switch (this.attractAnimPhase) {
+            case 0: // Show "PLAY" with upside-down Y for 1 second
+                if (this.attractAnimTimer >= 60) {
+                    this.attractAnimPhase = 1;
+                    this.attractAnimTimer = 0;
+                }
+                break;
+
+            case 1: // Alien flies in from left toward the Y
+                this.attractAlienX += 1.5;
+                if (this.attractAlienX >= targetX - 8) {
+                    this.attractAlienX = targetX - 8;
+                    this.attractAnimPhase = 2;
+                    this.attractAnimTimer = 0;
+                    // "Grab" the letter — alien is now next to it
+                }
+                break;
+
+            case 2: // Alien drags the flipped Y off screen to the left
+                this.attractAlienX -= 2;
+                this.attractLetterX = this.attractAlienX + 8;
+                if (this.attractAlienX < -16) {
+                    this.attractAnimPhase = 3;
+                    this.attractAnimTimer = 0;
+                    this.attractYCorrected = true;
+                    // Reset letter position to final destination
+                    const playW = this.renderer.measureText('PLAY');
+                    const playStartX = Math.floor((CONFIG.LOGICAL_WIDTH - playW) / 2);
+                    const plaPreW = this.renderer.measureText('PLA');
+                    this.attractLetterX = playStartX + plaPreW + 3;
+                }
+                break;
+
+            case 3: { // Alien returns from right with correct Y
+                if (this.attractAnimTimer === 1) {
+                    this.attractAlienX = CONFIG.LOGICAL_WIDTH + 8;
+                }
+                this.attractAlienX -= 1.5;
+                this.attractLetterX = this.attractAlienX + 8;
+                // Check if letter has reached its final position
+                const playW3 = this.renderer.measureText('PLAY');
+                const playStartX3 = Math.floor((CONFIG.LOGICAL_WIDTH - playW3) / 2);
+                const plaPreW3 = this.renderer.measureText('PLA');
+                const finalX3 = playStartX3 + plaPreW3 + 3;
+                if (this.attractLetterX <= finalX3) {
+                    this.attractLetterX = finalX3;
+                    this.attractAnimPhase = 4;
+                    this.attractAnimTimer = 0;
+                }
+                break;
+            }
+
+            case 4: // Alien flies away to the right
+                this.attractAlienX += 2;
+                if (this.attractAlienX > CONFIG.LOGICAL_WIDTH + 16 && this.attractAnimTimer >= 120) {
+                    this.attractAnim = 'idle';
+                    this.attractTimer = 0;
+                }
+                break;
         }
     }
 
@@ -2068,6 +2372,9 @@ class Game {
         this.gameOverTimer -= dt;
         if (this.gameOverTimer <= 0) {
             this.state = 'attract';
+            this.attractPassCount = 0;
+            this.attractTimer = 0;
+            this.attractAnim = 'idle';
         }
     }
 
@@ -2096,7 +2403,19 @@ class Game {
             score: this.score,
             highScore: this.highScore,
             lives: this.lives,
-            wave: this.wave
+            wave: this.wave,
+            // Attract animation fields
+            attractAnim: this.attractAnim,
+            attractAnimPhase: this.attractAnimPhase,
+            attractAlienX: this.attractAlienX,
+            attractAlienY: this.attractAlienY,
+            attractAlienFrame: this.attractAlienFrame,
+            attractBombY: this.attractBombY,
+            attractBombAlive: this.attractBombAlive,
+            attractLetterX: this.attractLetterX,
+            attractLetterY: this.attractLetterY,
+            attractCCorrected: this.attractCCorrected,
+            attractYCorrected: this.attractYCorrected,
         };
     }
 }
