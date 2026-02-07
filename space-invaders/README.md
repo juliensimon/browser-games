@@ -26,7 +26,8 @@ Open `index.html` in any modern browser. No build step or dependencies required.
 - Mystery ship with shot-count-based scoring (the famous "300-point trick")
 - Formation speed increases as aliens are destroyed (authentic to original hardware behavior)
 - Column-based alien firing — only the lowest alien per column can shoot
-- Authentic color scheme replicating the original cabinet's cellophane overlays
+- Cellophane color overlay via Canvas multiply blend mode — red/white/green zones matching the original cabinet
+- Attract screen gag animations from the original ROM: a squid bombs the extra C in "INSERT CCOIN", another drags away an upside-down Y in "PLAY"
 - Extra life at 1,500 points
 - Progressive wave difficulty: aliens start lower each wave
 - Persistent high score via localStorage
@@ -59,7 +60,7 @@ Space Invaders has been ported to virtually every platform and inspired entire g
 
 ## Technical Details
 
-This implementation is a single-file JavaScript game (`game.js`, ~2100 lines) organized into clearly separated sections:
+This implementation is a single-file JavaScript game (`game.js`, ~2450 lines) organized into clearly separated sections:
 
 1. **CONFIG** — All tunable constants (display, scoring, timing, colors)
 2. **Math Utilities** — AABB collision and clamping helpers
