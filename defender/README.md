@@ -14,12 +14,12 @@ Open `index.html` in any modern browser. No build step or dependencies required.
 
 | Key | Action |
 |-----|--------|
-| Up / Down Arrow | Move ship vertically |
-| Shift | Thrust (accelerate in facing direction) |
-| Left Arrow / A | Reverse direction |
+| Arrow keys | Move ship (up/down/left/right) |
 | Space | Fire laser |
 | D or Z | Smart bomb (destroys all on-screen enemies) |
 | H | Hyperspace (random teleport — 25% death chance) |
+| A | Reverse direction (without thrusting) |
+| Shift | Thrust in current facing direction |
 | Enter | Start game |
 
 ## Features

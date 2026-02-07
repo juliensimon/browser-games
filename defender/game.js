@@ -1085,16 +1085,25 @@ class Player {
             this.vy = 0;
         }
 
-        // Thrust: horizontal acceleration in facing direction
-        this.thrustActive = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
-        if (this.thrustActive) {
+        // Horizontal movement: arrow keys for direct control, Shift for thrust
+        this.thrustActive = false;
+        if (input.isDown('ArrowRight')) {
+            this.facing = 1;
+            this.thrustActive = true;
+            this.vx += CONFIG.PLAYER_THRUST_ACCEL;
+        } else if (input.isDown('ArrowLeft')) {
+            this.facing = -1;
+            this.thrustActive = true;
+            this.vx -= CONFIG.PLAYER_THRUST_ACCEL;
+        } else if (input.isDown('ShiftLeft') || input.isDown('ShiftRight')) {
+            this.thrustActive = true;
             this.vx += this.facing * CONFIG.PLAYER_THRUST_ACCEL;
         }
         this.vx *= CONFIG.PLAYER_DRAG;
         this.vx = MathUtils.clamp(this.vx, -CONFIG.PLAYER_MAX_SPEED, CONFIG.PLAYER_MAX_SPEED);
 
-        // Reverse direction
-        if (input.justPressed('KeyA') || input.justPressed('ArrowLeft')) {
+        // Reverse direction (A key)
+        if (input.justPressed('KeyA')) {
             this.facing = -this.facing;
         }
 
@@ -2132,6 +2141,7 @@ class Renderer {
         this.drawText('SPACE   FIRE', 70, controlsY + 22, '#aaaaaa');
         this.drawText('D OR Z  SMART BOMB', 70, controlsY + 32, '#aaaaaa');
         this.drawText('H       HYPERSPACE', 70, controlsY + 42, '#aaaaaa');
+        this.drawText('H       HYPERSPACE', 70, controlsY + 62, '#aaaaaa');
 
         // High score
         if (state.hiScore > 0) {
