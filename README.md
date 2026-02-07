@@ -2,6 +2,8 @@
 
 Classic arcade games recreated in the browser with vanilla JavaScript and HTML5 Canvas. No frameworks, no build tools, no dependencies — just open and play.
 
+![All games](screenshots/games-composite.png)
+
 ## Games
 
 | Game | Year | Description | Play |
@@ -9,6 +11,7 @@ Classic arcade games recreated in the browser with vanilla JavaScript and HTML5 
 | [Pong](pong/) | 1972 | The Atari original. The first commercially successful video game. Authentic 8-segment paddle deflection, progressive ball acceleration, monochrome CRT visuals with scanline effects, and square wave audio matching the original hardware tones. | Open `pong/index.html` |
 | [Space Invaders](space-invaders/) | 1978 | The Taito classic. Defend Earth from descending alien formations with your laser cannon. Pixel-accurate sprites, destructible shields with pixel-level erosion, cellophane color overlay, and attract screen gag animations from the original ROM. | Open `space-invaders/index.html` |
 | [Asteroids](asteroids/) | 1979 | The Atari classic. Pilot your ship through an asteroid field, blast rocks into fragments, and dodge UFOs. Vector-style graphics with phosphor glow effects, inertial physics, and hyperspace. | Open `asteroids/index.html` |
+| [Defender](defender/) | 1981 | The Williams classic. Defend humanoids from alien abduction across a horizontally scrolling landscape. Multiple enemy types, smart bombs, hyperspace, and a minimap scanner. | Open `defender/index.html` |
 
 ## Design Philosophy
 
