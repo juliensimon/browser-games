@@ -48,15 +48,15 @@ const CONFIG = Object.freeze({
 
     // Scoring
     SCORE_IN_FORMATION: [60, 50, 40, 30],
-    SCORE_DIVING: [150, 100, 80, 60],
+    SCORE_DIVING: [300, 100, 80, 60],
     SCORE_FLAGSHIP_1ESCORT: 200,
     SCORE_FLAGSHIP_2ESCORT: 800,
 
     // Dive AI
     MAX_DIVERS: 4,
-    DIVE_SPEED: 1.8,
-    DIVE_INTERVAL_BASE: 2000,
-    DIVE_INTERVAL_MIN: 600,
+    DIVE_SPEED: 0.4,
+    DIVE_INTERVAL_BASE: 2500,
+    DIVE_INTERVAL_MIN: 800,
     CONVOY_INTERVAL: 5000,
     ALIEN_BULLET_SPEED: 2,
     MAX_ALIEN_BULLETS: 3,
@@ -74,7 +74,7 @@ const CONFIG = Object.freeze({
     EXPLOSION_FRAMES: 3,
 
     // Returning
-    RETURN_SPEED: 1.5,
+    RETURN_SPEED: 0.6,
 
     // Stars
     STAR_COUNT: 60,
@@ -159,20 +159,21 @@ const MathUtils = {
 const SPRITES = {};
 
 // --- Blue Alien Frame 0 (wings spread) ---
+// Compact insect/butterfly shape, simplest alien type
 SPRITES.BLUE_0 = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,2,2,2,2,1,1,0,0,0,0],
+    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
     [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-    [0,0,0,1,1,2,1,1,1,1,2,1,1,0,0,0],
+    [0,0,0,1,2,1,1,2,2,1,1,2,1,0,0,0],
     [0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0],
-    [0,1,1,0,0,0,1,2,2,1,0,0,0,1,1,0],
+    [0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0],
     [1,1,0,0,0,0,1,1,1,1,0,0,0,0,1,1],
-    [1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1],
-    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
-    [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
+    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,0,1,1,0,1,0,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -181,79 +182,79 @@ SPRITES.BLUE_0 = [
 // --- Blue Alien Frame 1 (wings tucked) ---
 SPRITES.BLUE_1 = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,2,2,2,2,1,1,0,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-    [0,0,0,1,1,2,1,1,1,1,2,1,1,0,0,0],
-    [0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0],
-    [0,0,1,1,0,0,1,2,2,1,0,0,1,1,0,0],
-    [0,0,1,0,0,0,1,1,1,1,0,0,0,1,0,0],
+    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
     [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
-    [0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,0,1,2,1,2,2,1,2,1,0,0,0,0],
+    [0,0,0,1,1,0,1,1,1,1,0,1,1,0,0,0],
+    [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0],
+    [0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0],
+    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,0,1,1,0,1,0,0,0,0,0],
+    [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-// --- Purple Alien Frame 0 (wings spread) ---
+// --- Purple Alien Frame 0 (wings spread, angular horns) ---
 SPRITES.PURPLE_0 = [
-    [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,2,1,1,1,1,2,1,0,0,0,0],
-    [0,0,0,1,1,1,1,2,2,1,1,1,1,0,0,0],
-    [0,0,1,1,2,1,1,1,1,1,1,2,1,1,0,0],
-    [0,1,1,0,0,1,1,1,1,1,1,0,0,1,1,0],
-    [1,1,0,0,0,0,1,2,2,1,0,0,0,0,1,1],
-    [1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1],
-    [1,0,0,0,1,1,2,1,1,2,1,1,0,0,0,1],
-    [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
-    [0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,0],
+    [0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,1,2,1,1,2,2,1,1,2,1,0,0,0],
+    [0,0,1,1,1,1,2,1,1,2,1,1,1,1,0,0],
+    [0,1,2,0,1,1,1,1,1,1,1,1,0,2,1,0],
+    [1,1,0,0,0,1,1,2,2,1,1,0,0,0,1,1],
+    [1,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
+    [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],
     [0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0],
-    [0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
 // --- Purple Alien Frame 1 (wings tucked) ---
 SPRITES.PURPLE_1 = [
-    [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,2,1,1,1,1,2,1,0,0,0,0],
-    [0,0,0,1,1,1,1,2,2,1,1,1,1,0,0,0],
-    [0,0,0,1,2,1,1,1,1,1,1,2,1,0,0,0],
-    [0,0,1,1,0,1,1,1,1,1,1,0,1,1,0,0],
-    [0,0,1,0,0,0,1,2,2,1,0,0,0,1,0,0],
-    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
-    [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
-    [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0],
+    [0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,0,1,2,1,2,2,1,2,1,0,0,0,0],
+    [0,0,0,1,1,1,2,1,1,2,1,1,1,0,0,0],
+    [0,0,1,2,1,1,1,1,1,1,1,1,2,1,0,0],
+    [0,0,1,0,0,1,1,2,2,1,1,0,0,1,0,0],
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
     [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-// --- Red Escort Alien Frame 0 (wings spread) ---
+// --- Red Escort Alien Frame 0 (wings spread, cyan accents on tips) ---
 SPRITES.RED_0 = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
-    [0,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0],
-    [0,0,0,1,1,2,1,1,1,1,2,1,1,0,0,0],
-    [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-    [0,1,2,0,1,1,2,1,1,2,1,1,0,2,1,0],
-    [1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,1],
-    [1,2,0,0,0,0,1,2,2,1,0,0,0,0,2,1],
-    [1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1],
-    [0,0,0,0,1,2,0,1,1,0,2,1,0,0,0,0],
+    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,1,1,1,2,1,1,2,1,1,1,0,0,0],
+    [0,0,1,1,2,1,1,1,1,1,1,2,1,1,0,0],
+    [0,2,1,0,0,1,1,1,1,1,1,0,0,1,2,0],
+    [2,1,0,0,0,0,1,1,1,1,0,0,0,0,1,2],
+    [2,0,0,0,0,1,1,1,1,1,1,0,0,0,0,2],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
     [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
     [0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0],
     [0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
@@ -262,37 +263,37 @@ SPRITES.RED_0 = [
 SPRITES.RED_1 = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
-    [0,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0],
-    [0,0,0,1,1,2,1,1,1,1,2,1,1,0,0,0],
-    [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [0,0,1,2,1,1,2,1,1,2,1,1,2,1,0,0],
-    [0,0,1,0,0,1,1,1,1,1,1,0,0,1,0,0],
-    [0,0,0,0,0,0,1,2,2,1,0,0,0,0,0,0],
     [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,2,0,1,1,0,2,1,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
+    [0,0,0,1,2,1,1,1,1,1,1,2,1,0,0,0],
+    [0,0,2,1,0,1,1,1,1,1,1,0,1,2,0,0],
+    [0,0,2,0,0,0,1,1,1,1,0,0,0,2,0,0],
+    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
     [0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0],
     [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],
     [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-// --- Flagship Frame 0 (wings spread, full detail) ---
+// --- Flagship Frame 0 (wings spread, 3-color: yellow+green+red) ---
 SPRITES.FLAGSHIP_0 = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,1,3,3,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
+    [0,0,0,0,1,2,1,2,2,1,2,1,0,0,0,0],
     [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [0,0,1,2,1,1,2,1,1,2,1,1,2,1,0,0],
-    [0,1,1,1,3,1,1,1,1,1,1,3,1,1,1,0],
-    [1,1,2,0,0,1,1,2,2,1,1,0,0,2,1,1],
-    [1,3,0,0,0,1,2,1,1,2,1,0,0,0,3,1],
-    [1,1,0,0,0,1,1,1,1,1,1,0,0,0,1,1],
-    [0,1,0,0,1,2,1,1,1,1,2,1,0,0,1,0],
+    [0,0,3,1,2,1,2,1,1,2,1,2,1,3,0,0],
+    [0,3,1,0,0,1,1,1,1,1,1,0,0,1,3,0],
+    [3,1,0,0,0,1,2,1,1,2,1,0,0,0,1,3],
+    [3,0,0,0,0,0,1,1,1,1,0,0,0,0,0,3],
+    [0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
     [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
-    [0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,0],
+    [0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0],
     [0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0],
     [1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -302,39 +303,39 @@ SPRITES.FLAGSHIP_0 = [
 SPRITES.FLAGSHIP_1 = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,1,3,3,1,1,0,0,0,0,0],
-    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
-    [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
-    [0,0,0,1,2,1,2,1,1,2,1,2,1,0,0,0],
-    [0,0,1,1,3,1,1,1,1,1,1,3,1,1,0,0],
-    [0,0,1,2,0,1,1,2,2,1,1,0,2,1,0,0],
-    [0,0,1,0,0,1,2,1,1,2,1,0,0,1,0,0],
-    [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,1,2,1,1,1,1,2,1,0,0,0,0],
+    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
+    [0,0,0,0,1,2,1,2,2,1,2,1,0,0,0,0],
+    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+    [0,0,0,3,2,1,2,1,1,2,1,2,3,0,0,0],
+    [0,0,3,1,0,1,1,1,1,1,1,0,1,3,0,0],
+    [0,0,3,0,0,1,2,1,1,2,1,0,0,3,0,0],
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0],
     [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
-    [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0],
-    [0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0],
+    [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
     [0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-// --- Player Ship (Galaxip) ---
+// --- Player Ship (Galaxip) — white hull, blue sides, red center ---
 SPRITES.PLAYER = [
     [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,3,3,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,1,3,3,1,0,0,0,0,0,0],
     [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
-    [0,0,0,0,0,1,2,1,1,2,1,0,0,0,0,0],
-    [0,0,0,0,1,1,2,1,1,2,1,1,0,0,0,0],
+    [0,0,0,0,0,1,1,3,3,1,1,0,0,0,0,0],
     [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-    [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
+    [0,0,0,0,1,1,1,3,3,1,1,1,0,0,0,0],
     [0,0,0,1,2,1,1,1,1,1,1,2,1,0,0,0],
-    [0,0,1,1,2,1,1,1,1,1,1,2,1,1,0,0],
-    [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-    [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-    [0,1,3,1,1,1,1,1,1,1,1,1,1,3,1,0],
-    [1,1,3,1,1,1,1,1,1,1,1,1,1,3,1,1],
-    [1,0,3,0,0,1,1,0,0,1,1,0,0,3,0,1],
+    [0,0,0,1,2,1,1,3,3,1,1,2,1,0,0,0],
+    [0,0,1,2,2,1,1,1,1,1,1,2,2,1,0,0],
+    [0,0,1,2,1,1,1,1,1,1,1,1,2,1,0,0],
+    [0,1,2,2,1,1,1,1,1,1,1,1,2,2,1,0],
+    [0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0],
+    [1,1,2,0,0,1,1,0,0,1,1,0,0,2,1,1],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
@@ -896,6 +897,7 @@ class SoundEngine {
     constructor() {
         this.ctx = null;
         this.droneOsc = null;
+        this.droneOsc2 = null;
         this.droneLfo = null;
         this.droneGain = null;
         this.swoopOsc = null;
@@ -927,106 +929,136 @@ class SoundEngine {
     shoot() {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
+        // Short chirp — square wave with fast descending pitch
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.linearRampToValueAtTime(200, now + 0.08);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.08);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.06);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.06);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.08);
+        osc.stop(now + 0.06);
     }
 
     enemyHit() {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // Noise burst through bandpass
+        // Noise burst — characteristic splat
         const noise = this.ctx.createBufferSource();
-        noise.buffer = this._createNoiseBuffer(0.12);
+        noise.buffer = this._createNoiseBuffer(0.15);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(300, now);
-        filter.Q.setValueAtTime(2, now);
+        filter.frequency.setValueAtTime(400, now);
+        filter.frequency.linearRampToValueAtTime(150, now + 0.15);
+        filter.Q.setValueAtTime(3, now);
         const noiseGain = this.ctx.createGain();
         noiseGain.gain.setValueAtTime(0.2, now);
-        noiseGain.gain.linearRampToValueAtTime(0, now + 0.12);
+        noiseGain.gain.linearRampToValueAtTime(0, now + 0.15);
         noise.connect(filter);
         filter.connect(noiseGain);
         noiseGain.connect(this.ctx.destination);
         noise.start(now);
-        noise.stop(now + 0.12);
+        noise.stop(now + 0.15);
 
-        // Sine blip
+        // Descending tone blip
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.linearRampToValueAtTime(200, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.1);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.12);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.1);
+        osc.stop(now + 0.12);
     }
 
     flagshipHit() {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // Deeper noise burst
+        // Deeper, longer explosion — noise burst
         const noise = this.ctx.createBufferSource();
-        noise.buffer = this._createNoiseBuffer(0.2);
+        noise.buffer = this._createNoiseBuffer(0.35);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(150, now);
+        filter.frequency.setValueAtTime(300, now);
+        filter.frequency.linearRampToValueAtTime(60, now + 0.35);
         filter.Q.setValueAtTime(1.5, now);
         const noiseGain = this.ctx.createGain();
         noiseGain.gain.setValueAtTime(0.25, now);
-        noiseGain.gain.linearRampToValueAtTime(0, now + 0.2);
+        noiseGain.gain.linearRampToValueAtTime(0, now + 0.35);
         noise.connect(filter);
         filter.connect(noiseGain);
         noiseGain.connect(this.ctx.destination);
         noise.start(now);
-        noise.stop(now + 0.2);
+        noise.stop(now + 0.35);
 
-        // Descending tone
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(80, now + 0.2);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.2);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.2);
+        // Two descending tones for richer explosion
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(400, now);
+        osc1.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.3);
+
+        const osc2 = this.ctx.createOscillator();
+        const gain2 = this.ctx.createGain();
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(200, now + 0.05);
+        osc2.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+        gain2.gain.setValueAtTime(0, now);
+        gain2.gain.setValueAtTime(0.08, now + 0.05);
+        gain2.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc2.connect(gain2);
+        gain2.connect(this.ctx.destination);
+        osc2.start(now);
+        osc2.stop(now + 0.3);
     }
 
     playerDeath() {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
+        // Long descending noise sweep — classic player explosion
         const noise = this.ctx.createBufferSource();
-        noise.buffer = this._createNoiseBuffer(0.4);
+        noise.buffer = this._createNoiseBuffer(0.6);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(800, now);
-        filter.frequency.linearRampToValueAtTime(100, now + 0.4);
+        filter.frequency.setValueAtTime(1000, now);
+        filter.frequency.exponentialRampToValueAtTime(60, now + 0.6);
         filter.Q.setValueAtTime(2, now);
         const gain = this.ctx.createGain();
         gain.gain.setValueAtTime(0.3, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.4);
+        gain.gain.linearRampToValueAtTime(0, now + 0.6);
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.ctx.destination);
         noise.start(now);
-        noise.stop(now + 0.4);
+        noise.stop(now + 0.6);
+
+        // Descending warble for added drama
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(500, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.5);
+        oscGain.gain.setValueAtTime(0.1, now);
+        oscGain.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.connect(oscGain);
+        oscGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
     }
 
     diveSwoop(active) {
@@ -1036,22 +1068,22 @@ class SoundEngine {
             const now = this.ctx.currentTime;
             this.swoopOsc = this.ctx.createOscillator();
             this.swoopGain = this.ctx.createGain();
-            this.swoopOsc.type = 'sine';
-            this.swoopOsc.frequency.setValueAtTime(600, now);
-            this.swoopOsc.frequency.linearRampToValueAtTime(200, now + 0.3);
-            this.swoopGain.gain.setValueAtTime(0.1, now);
+            // Warbling descending tone — original uses oscillating pitch
+            this.swoopOsc.type = 'triangle';
+            this.swoopOsc.frequency.setValueAtTime(500, now);
+            this.swoopOsc.frequency.linearRampToValueAtTime(200, now + 0.4);
+            this.swoopGain.gain.setValueAtTime(0.08, now);
             this.swoopOsc.connect(this.swoopGain);
             this.swoopGain.connect(this.ctx.destination);
             this.swoopOsc.start(now);
-            // Loop the sweep by scheduling repeated ramps
             const scheduleSwoop = () => {
                 if (!this.swoopOsc) return;
                 const t = this.ctx.currentTime;
-                this.swoopOsc.frequency.setValueAtTime(600, t);
-                this.swoopOsc.frequency.linearRampToValueAtTime(200, t + 0.3);
-                this._swoopInterval = setTimeout(scheduleSwoop, 300);
+                this.swoopOsc.frequency.setValueAtTime(500, t);
+                this.swoopOsc.frequency.linearRampToValueAtTime(200, t + 0.4);
+                this._swoopInterval = setTimeout(scheduleSwoop, 400);
             };
-            this._swoopInterval = setTimeout(scheduleSwoop, 300);
+            this._swoopInterval = setTimeout(scheduleSwoop, 400);
         } else {
             if (this.swoopOsc) {
                 clearTimeout(this._swoopInterval);
@@ -1067,20 +1099,21 @@ class SoundEngine {
     extraLife() {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
-        const tones = [523, 659, 784]; // C5, E5, G5
+        // Ascending arpeggio — bright and cheerful
+        const tones = [523, 659, 784, 1047]; // C5, E5, G5, C6
         tones.forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'square';
             osc.frequency.setValueAtTime(freq, now);
-            const start = now + i * 0.08;
+            const start = now + i * 0.07;
             gain.gain.setValueAtTime(0, now);
-            gain.gain.setValueAtTime(0.12, start);
-            gain.gain.linearRampToValueAtTime(0, start + 0.08);
+            gain.gain.setValueAtTime(0.1, start);
+            gain.gain.linearRampToValueAtTime(0, start + 0.1);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(now);
-            osc.stop(start + 0.08);
+            osc.stop(start + 0.1);
         });
     }
 
@@ -1088,14 +1121,19 @@ class SoundEngine {
         if (!this.ctx || this.droneOsc) return;
         const now = this.ctx.currentTime;
 
+        // Two detuned oscillators for a richer throbbing sound
         this.droneOsc = this.ctx.createOscillator();
-        this.droneOsc.type = 'triangle';
+        this.droneOsc.type = 'sawtooth';
         this.droneOsc.frequency.setValueAtTime(55, now);
 
-        this.droneGain = this.ctx.createGain();
-        this.droneGain.gain.setValueAtTime(0.08, now);
+        this.droneOsc2 = this.ctx.createOscillator();
+        this.droneOsc2.type = 'sawtooth';
+        this.droneOsc2.frequency.setValueAtTime(55.5, now);
 
-        // LFO for gain modulation
+        this.droneGain = this.ctx.createGain();
+        this.droneGain.gain.setValueAtTime(0.06, now);
+
+        // LFO for pulsing gain — heartbeat-like throb
         this.droneLfo = this.ctx.createOscillator();
         this.droneLfo.type = 'sine';
         this.droneLfo.frequency.setValueAtTime(2, now);
@@ -1105,10 +1143,18 @@ class SoundEngine {
         lfoGain.connect(this.droneGain.gain);
         this._droneLfoGain = lfoGain;
 
-        this.droneOsc.connect(this.droneGain);
+        // Low-pass filter to soften the sawtooth
+        this._droneFilter = this.ctx.createBiquadFilter();
+        this._droneFilter.type = 'lowpass';
+        this._droneFilter.frequency.setValueAtTime(200, now);
+
+        this.droneOsc.connect(this._droneFilter);
+        this.droneOsc2.connect(this._droneFilter);
+        this._droneFilter.connect(this.droneGain);
         this.droneGain.connect(this.ctx.destination);
 
         this.droneOsc.start(now);
+        this.droneOsc2.start(now);
         this.droneLfo.start(now);
     }
 
@@ -1117,6 +1163,11 @@ class SoundEngine {
             this.droneOsc.stop();
             this.droneOsc.disconnect();
             this.droneOsc = null;
+        }
+        if (this.droneOsc2) {
+            this.droneOsc2.stop();
+            this.droneOsc2.disconnect();
+            this.droneOsc2 = null;
         }
         if (this.droneLfo) {
             this.droneLfo.stop();
@@ -1131,16 +1182,27 @@ class SoundEngine {
             this._droneLfoGain.disconnect();
             this._droneLfoGain = null;
         }
+        if (this._droneFilter) {
+            this._droneFilter.disconnect();
+            this._droneFilter = null;
+        }
     }
 
     setDroneSpeed(level) {
         if (!this.droneOsc || !this.ctx) return;
-        // level 0-15: higher level = higher pitch drone
-        const baseFreq = 55 + level * 8;
-        const lfoRate = 2 + level * 0.5;
+        // level 0-15: higher level = faster throbbing, higher pitch
+        const baseFreq = 55 + level * 10;
+        const lfoRate = 2 + level * 0.8;
+        const filterFreq = 200 + level * 30;
         this.droneOsc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+        if (this.droneOsc2) {
+            this.droneOsc2.frequency.setValueAtTime(baseFreq + 0.5, this.ctx.currentTime);
+        }
         if (this.droneLfo) {
             this.droneLfo.frequency.setValueAtTime(lfoRate, this.ctx.currentTime);
+        }
+        if (this._droneFilter) {
+            this._droneFilter.frequency.setValueAtTime(filterFreq, this.ctx.currentTime);
         }
     }
 }
@@ -1399,7 +1461,7 @@ class Star {
     constructor() {
         this.x = Math.random() * CONFIG.LOGICAL_WIDTH;
         this.y = Math.random() * CONFIG.LOGICAL_HEIGHT;
-        const colors = ['#FFFFFF', '#FFFF99', '#99CCFF', '#FF9999', '#99FF99'];
+        const colors = ['#FFFFFF', '#FFFF00', '#00FFFF', '#FF0000', '#00FF00', '#FF00FF'];
         this.color = colors[Math.floor(Math.random() * colors.length)];
         this.brightness = 0.3 + Math.random() * 0.7;
         this.speed = CONFIG.STAR_SCROLL_SPEED * (0.5 + Math.random());
@@ -1477,7 +1539,7 @@ const CollisionSystem = {
 const ALIEN_COLOR_MAPS = {
     [CONFIG.TYPE_BLUE]: { 1: CONFIG.COLOR_BLUE_ALIEN, 2: CONFIG.COLOR_BLUE_ALIEN_DARK },
     [CONFIG.TYPE_PURPLE]: { 1: CONFIG.COLOR_PURPLE_ALIEN, 2: CONFIG.COLOR_PURPLE_ALIEN_DARK },
-    [CONFIG.TYPE_RED]: { 1: CONFIG.COLOR_RED_ALIEN, 2: CONFIG.COLOR_RED_ALIEN_DARK },
+    [CONFIG.TYPE_RED]: { 1: CONFIG.COLOR_RED_ALIEN, 2: CONFIG.COLOR_BLUE_ALIEN },
     [CONFIG.TYPE_FLAGSHIP]: { 1: CONFIG.COLOR_FLAGSHIP, 2: CONFIG.COLOR_FLAGSHIP_ACCENT, 3: CONFIG.COLOR_RED_ALIEN },
 };
 
@@ -1689,54 +1751,54 @@ const Renderer = {
             }
         }
 
-        // Score table header
-        this.drawCenteredText('- SCORE TABLE -', 75, CONFIG.COLOR_HUD_YELLOW);
+        // Score table header (authentic: "SCORE ADVANCE TABLE")
+        this.drawCenteredText('- SCORE ADVANCE TABLE -', 75, CONFIG.COLOR_HUD_YELLOW);
 
-        // Column headers
-        this.drawText('FORM', 120, 87, CONFIG.COLOR_TEXT);
-        this.drawText('DIVE', 158, 87, CONFIG.COLOR_TEXT);
+        // Column headers (authentic: CONVOY / CHARGER)
+        this.drawText('CONVOY', 108, 87, CONFIG.COLOR_TEXT);
+        this.drawText('CHARGER', 152, 87, CONFIG.COLOR_TEXT);
 
         // Flagship row with convoy bonuses
         const flagSprite = SPRITES.FLAGSHIP_0;
         if (flagSprite) {
-            this.drawSprite(flagSprite, 50, 97, ALIEN_COLOR_MAPS[CONFIG.TYPE_FLAGSHIP]);
+            this.drawSprite(flagSprite, 34, 97, ALIEN_COLOR_MAPS[CONFIG.TYPE_FLAGSHIP]);
         }
-        this.drawText('FLAGSHIP', 70, 99, CONFIG.COLOR_TEXT);
-        this.drawText('60', 124, 99, CONFIG.COLOR_TEXT);
-        this.drawText('150', 156, 99, CONFIG.COLOR_TEXT);
+        this.drawText('FLAGSHIP', 54, 99, CONFIG.COLOR_TEXT);
+        this.drawText('60', 116, 99, CONFIG.COLOR_TEXT);
+        this.drawText('300', 160, 99, CONFIG.COLOR_TEXT);
 
         // Convoy bonus info
-        this.drawText('W/1 ESCORT', 70, 111, CONFIG.COLOR_HUD_YELLOW);
-        this.drawText('200', 156, 111, CONFIG.COLOR_HUD_YELLOW);
-        this.drawText('W/2 ESCORTS', 70, 121, CONFIG.COLOR_HUD_YELLOW);
-        this.drawText('800', 156, 121, CONFIG.COLOR_HUD_YELLOW);
+        this.drawText('W/1 ESCORT', 54, 111, CONFIG.COLOR_HUD_YELLOW);
+        this.drawText('200', 160, 111, CONFIG.COLOR_HUD_YELLOW);
+        this.drawText('W/2 ESCORTS', 54, 121, CONFIG.COLOR_HUD_YELLOW);
+        this.drawText('800', 160, 121, CONFIG.COLOR_HUD_YELLOW);
 
         // Red alien row
         const redSprite = SPRITES.RED_0;
         if (redSprite) {
-            this.drawSprite(redSprite, 50, 133, ALIEN_COLOR_MAPS[CONFIG.TYPE_RED]);
+            this.drawSprite(redSprite, 34, 133, ALIEN_COLOR_MAPS[CONFIG.TYPE_RED]);
         }
-        this.drawText('RED', 70, 135, CONFIG.COLOR_TEXT);
-        this.drawText('50', 124, 135, CONFIG.COLOR_TEXT);
-        this.drawText('100', 156, 135, CONFIG.COLOR_TEXT);
+        this.drawText('RED', 54, 135, CONFIG.COLOR_TEXT);
+        this.drawText('50', 116, 135, CONFIG.COLOR_TEXT);
+        this.drawText('100', 160, 135, CONFIG.COLOR_TEXT);
 
         // Purple alien row
         const purpSprite = SPRITES.PURPLE_0;
         if (purpSprite) {
-            this.drawSprite(purpSprite, 50, 147, ALIEN_COLOR_MAPS[CONFIG.TYPE_PURPLE]);
+            this.drawSprite(purpSprite, 34, 147, ALIEN_COLOR_MAPS[CONFIG.TYPE_PURPLE]);
         }
-        this.drawText('PURPLE', 70, 149, CONFIG.COLOR_TEXT);
-        this.drawText('40', 124, 149, CONFIG.COLOR_TEXT);
-        this.drawText('80', 156, 149, CONFIG.COLOR_TEXT);
+        this.drawText('PURPLE', 54, 149, CONFIG.COLOR_TEXT);
+        this.drawText('40', 116, 149, CONFIG.COLOR_TEXT);
+        this.drawText('80', 160, 149, CONFIG.COLOR_TEXT);
 
         // Blue alien row
         const blueSprite = SPRITES.BLUE_0;
         if (blueSprite) {
-            this.drawSprite(blueSprite, 50, 161, ALIEN_COLOR_MAPS[CONFIG.TYPE_BLUE]);
+            this.drawSprite(blueSprite, 34, 161, ALIEN_COLOR_MAPS[CONFIG.TYPE_BLUE]);
         }
-        this.drawText('BLUE', 70, 163, CONFIG.COLOR_TEXT);
-        this.drawText('30', 124, 163, CONFIG.COLOR_TEXT);
-        this.drawText('60', 156, 163, CONFIG.COLOR_TEXT);
+        this.drawText('BLUE', 54, 163, CONFIG.COLOR_TEXT);
+        this.drawText('30', 116, 163, CONFIG.COLOR_TEXT);
+        this.drawText('60', 160, 163, CONFIG.COLOR_TEXT);
 
         // Taglines
         this.drawCenteredText('WE ARE THE GALAXIANS', 185, CONFIG.COLOR_BLUE_ALIEN);
