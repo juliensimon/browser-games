@@ -7,6 +7,7 @@ Classic arcade games recreated in the browser with vanilla JavaScript and HTML5 
 | Game | Description | Play |
 |------|-------------|------|
 | [Asteroids](asteroids/) | The 1979 Atari classic. Pilot your ship through an asteroid field, blast rocks into fragments, and dodge UFOs. Vector-style graphics with phosphor glow effects. | Open `asteroids/index.html` |
+| [Space Invaders](space-invaders/) | The 1978 Taito classic. Defend Earth from descending alien formations with your laser cannon. Pixel-accurate sprites, destructible shields, and authentic cellophane color overlay. | Open `space-invaders/index.html` |
 
 ## How to Run
 
