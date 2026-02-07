@@ -26,7 +26,7 @@ const CONFIG = Object.freeze({
     PLAYER_VERTICAL_SPEED: 2,
     PLAYER_DRAG: 0.98,
     PLAYER_WIDTH: 16,
-    PLAYER_HEIGHT: 8,
+    PLAYER_HEIGHT: 5,
     PLAYER_START_Y: 120,
     PLAYER_INVULN_TIME: 3000,
     PLAYER_BLINK_RATE: 100,
@@ -95,17 +95,17 @@ const CONFIG = Object.freeze({
     COLOR_PLAYER: '#ffffff',
     COLOR_PLAYER_ENGINE: '#00ffff',
     COLOR_LANDER: '#00ff00',
-    COLOR_MUTANT: '#ff00ff',
-    COLOR_BAITER: '#ff0000',
+    COLOR_MUTANT: '#cc44ff',
+    COLOR_BAITER: '#ffff00',
     COLOR_BOMBER: '#ff0000',
     COLOR_POD: '#ff0000',
-    COLOR_SWARMER: '#ff0000',
-    COLOR_HUMANOID: '#ff8800',
+    COLOR_SWARMER: '#ff4400',
+    COLOR_HUMANOID: '#00ff00',
     COLOR_MINE: '#ffffff',
     COLOR_LASER: '#ffffff',
     COLOR_ENEMY_BULLET: '#ffff00',
-    COLOR_TERRAIN: '#aa5500',
-    COLOR_TERRAIN_HIGHLIGHT: '#00ff00',
+    COLOR_TERRAIN: '#bb5500',
+    COLOR_TERRAIN_HIGHLIGHT: '#00cc00',
     COLOR_SCANNER_BG: '#000033',
     COLOR_TEXT: '#ffffff',
 
@@ -176,107 +176,116 @@ const MathUtils = {
 // ============================================================================
 
 const SPRITES = {
-    // Player ship facing right (16x7) — sleek Defender arrowhead
+    // Player ship facing right (16x5) — authentic Defender "pencil" shape
+    // Sharp pointed nose, narrow elongated body, split rear exhaust fins
     PLAYER_RIGHT: [
-        [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0],
-        [0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-        [0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
     ],
 
-    // Player ship facing left (16x7) — mirror of right
+    // Player ship facing left (16x5) — mirror of right
     PLAYER_LEFT: [
-        [0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
-        [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-        [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
-        [0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0],
     ],
 
-    // Lander (8x8) — dome-topped shape with legs
+    // Lander (8x8) — round/oval UFO shape with antenna-like protrusions
+    // Original is a rounded form, green colored
     LANDER: [
+        [0,0,0,1,1,0,0,0],
         [0,0,1,1,1,1,0,0],
         [0,1,1,1,1,1,1,0],
         [1,1,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1],
-        [0,1,1,1,1,1,1,0],
-        [0,0,1,0,0,1,0,0],
-        [0,1,0,0,0,0,1,0],
+        [0,1,0,1,1,0,1,0],
         [1,0,0,0,0,0,0,1],
+        [0,0,0,0,0,0,0,0],
     ],
 
-    // Mutant (8x8) — jagged, aggressive distorted lander
+    // Mutant (10x8) — spiky, erratic corrupted lander-humanoid fusion
+    // Original ROM: 10px wide (5 bytes) x 8 tall, purple/magenta
     MUTANT: [
-        [1,0,0,1,1,0,0,1],
-        [0,1,1,1,1,1,1,0],
-        [1,1,0,1,1,0,1,1],
+        [0,1,0,0,1,1,0,0,1,0],
+        [1,0,1,1,1,1,1,1,0,1],
+        [0,1,1,0,1,1,0,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,1,1,1,1,1,1,0],
+        [1,0,1,1,0,0,1,1,0,1],
+        [0,1,0,1,0,0,1,0,1,0],
+        [1,0,0,0,1,1,0,0,0,1],
+    ],
+
+    // Baiter (12x3) — flat, thin iridescent disc/spacecraft
+    // "Flat, iridescent spacecraft" — sleek horizontal saucer
+    BAITER: [
+        [0,0,0,1,1,1,1,1,1,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,1,1,1,1,1,1,1,1,0],
+        [0,0,0,1,1,1,1,1,1,0,0,0],
+    ],
+
+    // Bomber (8x8) — box-shaped alien with internal detail
+    // "Box-shaped alien" that trails mines
+    BOMBER: [
         [1,1,1,1,1,1,1,1],
         [1,0,1,1,1,1,0,1],
-        [0,1,1,0,0,1,1,0],
-        [1,0,1,0,0,1,0,1],
-        [0,1,0,1,1,0,1,0],
-    ],
-
-    // Baiter (10x4) — flat, fast elongated shape
-    BAITER: [
-        [0,0,1,1,1,1,1,1,0,0],
-        [0,1,1,1,1,1,1,1,1,0],
-        [1,1,1,1,1,1,1,1,1,1],
-        [0,0,1,1,1,1,1,1,0,0],
-    ],
-
-    // Bomber (8x8) — round, mine-like shape
-    BOMBER: [
-        [0,0,1,1,1,1,0,0],
-        [0,1,1,1,1,1,1,0],
         [1,1,1,0,0,1,1,1],
-        [1,1,0,0,0,0,1,1],
-        [1,1,0,0,0,0,1,1],
+        [1,1,0,1,1,0,1,1],
+        [1,1,0,1,1,0,1,1],
         [1,1,1,0,0,1,1,1],
-        [0,1,1,1,1,1,1,0],
-        [0,0,1,1,1,1,0,0],
+        [1,0,1,1,1,1,0,1],
+        [1,1,1,1,1,1,1,1],
     ],
 
-    // Pod (6x6) — small circular blob
+    // Pod (8x8) — multi-pointed star/asterisk shape
+    // "Star-like aliens" — spiky star, not a circle
     POD: [
-        [0,0,1,1,0,0],
-        [0,1,1,1,1,0],
-        [1,1,1,1,1,1],
-        [1,1,1,1,1,1],
-        [0,1,1,1,1,0],
-        [0,0,1,1,0,0],
+        [0,0,0,1,1,0,0,0],
+        [0,1,0,1,1,0,1,0],
+        [0,0,1,1,1,1,0,0],
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1],
+        [0,0,1,1,1,1,0,0],
+        [0,1,0,1,1,0,1,0],
+        [0,0,0,1,1,0,0,0],
     ],
 
-    // Swarmer (4x4) — tiny diamond
+    // Swarmer (4x4) — tiny teardrop shape
+    // "Tiny teardrop-shaped aliens" — small, pointed
     SWARMER: [
         [0,1,1,0],
         [1,1,1,1],
-        [1,1,1,1],
         [0,1,1,0],
+        [0,0,1,0],
     ],
 
-    // Humanoid (4x8) — small stick figure
+    // Humanoid (4x8) — "men's room" head-and-shoulders silhouette
+    // Simple human figure, distinct head, body, legs
     HUMANOID: [
         [0,1,1,0],
         [0,1,1,0],
         [1,1,1,1],
+        [1,1,1,1],
         [0,1,1,0],
         [0,1,1,0],
         [0,1,1,0],
-        [1,1,0,0],
-        [0,0,1,1],
+        [1,0,0,1],
     ],
 
-    // Mine (3x3) — small cross
+    // Mine (5x5) — small cross/plus shape, stationary hazard
     MINE: [
-        [0,1,0],
-        [1,1,1],
-        [0,1,0],
+        [0,0,1,0,0],
+        [0,0,1,0,0],
+        [1,1,1,1,1],
+        [0,0,1,0,0],
+        [0,0,1,0,0],
     ],
 
     // Explosion frames (3 frames, each 8x8) — expanding burst
@@ -316,29 +325,23 @@ const SPRITES = {
         ],
     ],
 
-    // Player explosion frames (2 frames, 16x8) — ship breaking apart
+    // Player explosion frames (2 frames, 16x5) — ship breaking apart
     PLAYER_EXPLOSION: [
         // Frame 0: ship cracking apart
         [
-            [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0],
-            [0,0,0,0,0,0,0,0,1,0,1,1,0,1,1,0],
-            [0,0,0,1,1,0,1,1,0,1,1,1,1,0,0,0],
-            [1,1,0,1,1,1,1,0,1,1,1,0,0,0,0,0],
-            [0,1,1,1,0,1,1,1,1,1,0,1,0,0,0,0],
-            [0,0,1,1,1,0,1,1,1,1,1,1,0,0,0,0],
-            [0,0,0,0,0,1,0,0,0,1,1,0,1,1,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0],
+            [0,0,0,1,0,1,1,0,1,1,1,0,1,1,0,0],
+            [1,0,1,1,1,0,1,1,0,1,1,1,0,1,0,1],
+            [0,0,1,0,0,1,1,0,1,1,0,1,1,0,0,0],
+            [0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0],
         ],
         // Frame 1: fully fragmented
         [
-            [0,1,0,0,0,0,0,0,0,0,0,1,0,0,1,0],
-            [0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,0],
-            [0,0,1,0,0,0,1,0,0,1,0,1,0,0,0,0],
-            [1,0,0,1,0,1,0,0,1,0,0,0,0,0,0,1],
-            [0,0,1,0,0,0,1,0,0,0,1,0,0,1,0,0],
-            [0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],
-            [0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0],
-            [0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0],
+            [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
+            [0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0],
+            [1,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0],
+            [0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0],
+            [0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0],
         ],
     ],
 
@@ -1353,7 +1356,7 @@ class Mutant {
     }
 
     getRect() {
-        return { x: this.x, y: this.y, w: 8, h: 8 };
+        return { x: this.x, y: this.y, w: 10, h: 8 };
     }
 }
 
@@ -1410,7 +1413,7 @@ class Baiter {
     }
 
     getRect() {
-        return { x: this.x, y: this.y, w: 10, h: 4 };
+        return { x: this.x, y: this.y, w: 12, h: 5 };
     }
 }
 
@@ -1461,7 +1464,7 @@ class Mine {
     }
 
     getRect() {
-        return { x: this.x, y: this.y, w: 3, h: 3 };
+        return { x: this.x, y: this.y, w: 5, h: 5 };
     }
 }
 
@@ -1485,7 +1488,7 @@ class Pod {
     }
 
     getRect() {
-        return { x: this.x, y: this.y, w: 6, h: 6 };
+        return { x: this.x, y: this.y, w: 8, h: 8 };
     }
 }
 

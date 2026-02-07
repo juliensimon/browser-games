@@ -131,7 +131,14 @@ After all 3 agents complete:
 
 1. **README.md** for the game — follow the template in IMPLEMENTATION.md (title, controls, features, game history with Origins/Hardware/Arcade Phenomenon/Legacy, technical details, license)
 2. **Update root README.md** — add the game to the table, sorted by year
-3. **Clean up** — remove git worktrees, delete temporary branches, stop HTTP server, remove temp screenshot files
+3. **Regenerate composite image** — run the composite generator script to rebuild `screenshots/games-composite.png` from all games' `screenshots/gameplay.png` files. The script uses Python/Pillow to create a 2-column grid of all games in chronological order with labels. If the script doesn't exist, create one that:
+   - Collects `<game>/screenshots/gameplay.png` from every game directory
+   - Arranges them in a 2-column grid sorted by year (derive from root README table)
+   - Scales each to fit a 600×460 cell using LANCZOS resampling
+   - Adds centered labels below each cell (e.g., "PONG (1972)") in a monospace font
+   - Uses black background to match the CRT-era aesthetic
+   - Saves to `screenshots/games-composite.png`
+4. **Clean up** — remove git worktrees, delete temporary branches, stop HTTP server, remove temp screenshot files
 4. **Commit** with a descriptive message following the project's commit style
 
 ## Critical Rules
@@ -168,3 +175,27 @@ The key insight: hardware-level behaviors like "ball travels faster at steep ang
 
 ### Parallel Agent Text Rendering
 When assigning the game-engine agent (sections 7-10), explicitly tell it to create a FONT_ALPHA with ALL characters needed for UI text, including digits at the same size as letters. List every string that will appear on screen (attract text, game over text, HUD labels) so the agent knows exactly which characters to include. Missing characters result in invisible text that's hard to debug from screenshots alone.
+
+### Sprite Authenticity — Research the Actual Shapes
+Generic placeholder sprites (circles, squares, symmetric blobs) look wrong even with correct colors. Each enemy in a classic arcade game has a **distinctive silhouette** documented in arcade preservation resources. During research, specifically look for:
+- **Shape descriptions** from wikis (e.g., "box-shaped alien", "flat iridescent spacecraft", "star-like", "teardrop-shaped", "pencil-like craft")
+- **ROM sprite data** from sites like `seanriddle.com/ripper.html` and `computerarcheology.com` which document actual pixel layouts from the hardware
+- **FPGA recreations** on GitHub (search `fpga-<game>`) which often faithfully reproduce sprite data in VHDL/Verilog
+- **The original game's source code** if available (e.g., `mwenge/defender` on GitHub has the 6809 assembly)
+- Describe the exact sprite shape in the plan's interface contracts so agents create faithful sprites, not generic ones
+
+### Color Authenticity — Match the Original Palette
+Don't assume colors — research them. Common mistakes:
+- **Humanoids** in Defender are green (matching the terrain theme), not orange
+- **Baiters** are yellow/iridescent (color-cycling), not plain red
+- **Mutants** are purple/violet, not hot pink
+- Different enemy types that "look red" often have distinct shades (pure red vs orange-red vs crimson)
+Each entity's color should be visible in MAME screenshots — compare against at least 3 reference screenshots before finalizing the palette. In the plan, document the exact hex color for every entity.
+
+### Scrolling Games — World Wrap and Camera
+Games with horizontally scrolling worlds (Defender, Scramble) need careful coordinate systems:
+- All entities store **world-space** x coordinates (0..WORLD_WIDTH-1)
+- Camera tracks player position, offset computed per frame
+- `worldToScreen()` must handle wrapping (entity near x=0 visible from camera near x=WORLD_WIDTH)
+- Terrain must use seamless-wrap frequencies (integer multiples of TAU/WORLD_WIDTH for sine-based terrain)
+- The scanner/minimap is a compressed view of the entire world — entity dots use world-space positions divided by compression ratio
