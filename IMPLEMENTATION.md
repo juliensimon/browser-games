@@ -351,3 +351,12 @@ Each game README follows this template:
 6. **License** — fan recreation disclaimer
 
 The top-level README has a table of all games sorted by year, plus the design philosophy section explaining shared conventions.
+
+---
+
+## Lunar Lander Lessons
+
+- **Zoom vs camera offset conflict**: If a game has altitude-dependent zoom, the zoom range and camera positioning must be co-designed. Zooming in too early (e.g., starting at altitude 3500) makes the visible window too small to show both the player and terrain. Solution: delay zoom until the final approach (altitude < 600) and use a camera midpoint blend between player and terrain at overview zoom.
+- **Camera midpoint blend**: At overview zoom, target the camera at the midpoint between the player and the terrain so both are visible. Blend toward player-centered as `smoothT` increases: `targetY = lerp(midpointY, landerY, smoothT)`.
+- **Pad label positioning**: `drawCenteredText()` centers on the screen, not on a world position. For labels attached to world objects (landing pad multipliers), use `drawText()` with the object's screen-space X coordinate.
+- **Stars in world-space cause phosphor smearing**: Drawing stars in world coordinates makes them streak across the phosphor persistence canvas as the camera pans. Draw stars in screen-space with minimal parallax (0.02) instead.

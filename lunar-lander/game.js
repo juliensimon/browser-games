@@ -13,10 +13,10 @@ const CONFIG = Object.freeze({
     TERRAIN_POINTS: 256,
 
     // Zoom
-    ZOOM_MIN: 0.08,
-    ZOOM_MAX: 2.0,
-    ZOOM_ALT_HIGH: 3500,
-    ZOOM_ALT_LOW: 200,
+    ZOOM_MIN: 0.18,
+    ZOOM_MAX: 1.5,
+    ZOOM_ALT_HIGH: 600,
+    ZOOM_ALT_LOW: 100,
     ZOOM_LERP_SPEED: 0.03,
 
     // Lander physics
@@ -1128,12 +1128,13 @@ class Renderer {
             ctx.stroke();
             ctx.restore();
 
-            // Draw multiplier label (flashing)
+            // Draw multiplier label (flashing), centered on the pad
             const blink = Math.floor(this.frameCount / 20) % 2 === 0;
             if (blink) {
                 const label = pad.multiplier + 'X';
                 const labelScale = MathUtils.clamp(cam.zoom * 8, 1, 3);
-                this.drawCenteredText(ctx, label, sy + 10 + labelScale * 8, labelScale, CONFIG.PAD_COLOR);
+                const labelW = this.measureText(label, labelScale);
+                this.drawText(ctx, label, sx - labelW / 2, sy + 10 + labelScale * 8, labelScale, CONFIG.PAD_COLOR);
             }
         }
     }
@@ -1499,7 +1500,9 @@ class Game {
         // Give slight random drift
         this.lander.vx = (Math.random() - 0.5) * 2;
         this.camera.x = this.lander.x;
-        this.camera.y = this.lander.y;
+        // Start camera at midpoint between lander and terrain so both are visible
+        const terrainY = this.terrain.getHeightAt(this.lander.x);
+        this.camera.y = (this.lander.y + terrainY) / 2;
         this.camera.zoom = CONFIG.ZOOM_MIN;
         this.camera.targetZoom = CONFIG.ZOOM_MIN;
     }
@@ -1722,17 +1725,22 @@ class Game {
 
         // Camera follows lander
         const targetX = this.lander.x;
-        const targetY = this.lander.y;
-
-        // Smooth camera follow
-        this.camera.x += (targetX - this.camera.x) * 0.08;
-        this.camera.y += (targetY - this.camera.y) * 0.08;
 
         // Zoom based on altitude
         const altitude = this.lander.getAltitude(this.terrain.getHeightAt(this.lander.x));
         const t = MathUtils.clamp(MathUtils.inverseLerp(CONFIG.ZOOM_ALT_HIGH, CONFIG.ZOOM_ALT_LOW, altitude), 0, 1);
         const smoothT = MathUtils.smoothstep(0, 1, t);
         this.camera.targetZoom = MathUtils.lerp(CONFIG.ZOOM_MIN, CONFIG.ZOOM_MAX, smoothT);
+
+        // At overview: camera targets midpoint between lander and terrain (both visible)
+        // At close-up: camera centers on lander for precision landing
+        const terrainY = this.terrain.getHeightAt(this.lander.x);
+        const midpointY = (this.lander.y + terrainY) / 2;
+        const targetY = MathUtils.lerp(midpointY, this.lander.y, smoothT);
+
+        // Smooth camera follow
+        this.camera.x += (targetX - this.camera.x) * 0.08;
+        this.camera.y += (targetY - this.camera.y) * 0.08;
 
         // Smooth zoom interpolation
         this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * CONFIG.ZOOM_LERP_SPEED;

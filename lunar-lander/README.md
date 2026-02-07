@@ -20,6 +20,15 @@ Open `index.html` in any modern browser. No build step or dependencies required.
 | Arrow Up/Down | Select mission (on mission select screen) |
 | Enter | Start game / confirm mission |
 
+### Missions
+
+| Mission | Gravity | Friction | Rotation | Description |
+|---------|---------|----------|----------|-------------|
+| Training | Low (0.01) | Yes | Instant | Forgiving physics with air friction that slows you down — ideal for learning |
+| Cadet | Moderate (0.02) | No | Instant | Standard gravity, no friction — you must actively control your speed |
+| Prime | Strong (0.035) | No | Instant | 3.5x Training gravity — requires aggressive thrusting, burns fuel fast |
+| Command | Moderate (0.02) | No | Momentum | Ship carries angular momentum — rotation doesn't stop instantly, making precise angle control much harder |
+
 ### Goal
 
 Land your lunar module safely on the flat landing pads scattered across the moon's surface. Each pad has a score multiplier (1X, 2X, or 5X) — smaller pads are worth more but harder to hit. You must land gently (low vertical and horizontal speed) and nearly upright (within 15 degrees of vertical).
