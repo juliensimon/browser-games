@@ -200,6 +200,15 @@ Games with horizontally scrolling worlds (Defender, Scramble) need careful coord
 - Terrain must use seamless-wrap frequencies (integer multiples of TAU/WORLD_WIDTH for sine-based terrain)
 - The scanner/minimap is a compressed view of the entire world — entity dots use world-space positions divided by compression ratio
 
+### Terrain-Aware Entity Clamping (from Defender build)
+If a game has variable-height terrain (sine waves, procedural ground), do NOT use a fixed `PLAY_AREA_BOTTOM` constant for entity Y clamping — entities will clip through the ground. Instead:
+- Add a `terrainSurfaceY(worldX)` utility that returns the actual ground level at any world X position (e.g., `TERRAIN_Y - terrainHeight[x]`)
+- Clamp player Y to `terrainSurfaceY(x) - PLAYER_HEIGHT`
+- Clamp enemies to `terrainSurfaceY(x) - spriteHeight`
+- Also fix **spawn positions** (hyperspace, enemy spawns) to use terrain-aware Y ranges, not `PLAY_AREA_BOTTOM`
+- Keep `PLAY_AREA_BOTTOM` in CONFIG for rendering bounds (background fill, scanner area) but never use it for entity movement clamping
+- The terrain baseline (`TERRAIN_Y`) and the terrain surface are different values — surface = baseline minus height. Confusing the two causes entities to appear underground.
+
 ### Research — ROM Disassembly and FPGA Sources (from Centipede build)
 Go beyond wikis and gameplay videos. The most accurate game behavior details come from:
 - **ROM disassembly sites** like `6502disassembly.com` — contain annotated source code for classic 6502/6809 games with detailed comments on game logic, timing tables, scoring formulas, and sprite data
