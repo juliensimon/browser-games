@@ -517,7 +517,7 @@ class InputHandler {
     isLeft() { return this.isDown('ArrowLeft') || this.isDown('a') || this.isDown('A'); }
     isRight() { return this.isDown('ArrowRight') || this.isDown('d') || this.isDown('D'); }
     isUp() { return this.isDown('ArrowUp') || this.isDown('w') || this.isDown('W'); }
-    isDown() { return this.isDown('ArrowDown') || this.isDown('s') || this.isDown('S'); }
+    isDownPressed() { return this.isDown('ArrowDown') || this.isDown('s') || this.isDown('S'); }
 
     isStart() { return this.justPressed('Enter'); }
 
@@ -763,7 +763,7 @@ class PacMan {
             this.nextDir = { dx: 1, dy: 0 };
         } else if (input.isUp()) {
             this.nextDir = { dx: 0, dy: -1 };
-        } else if (input.isDown()) {
+        } else if (input.isDownPressed()) {
             this.nextDir = { dx: 0, dy: 1 };
         }
 
