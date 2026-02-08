@@ -525,7 +525,6 @@ class InputHandler {
         this.keysJustPressed.clear();
     }
 }
-'use strict';
 
 // ============================================================================
 // SECTION 4: SOUND ENGINE
@@ -1186,7 +1185,6 @@ class Ghost {
         return CONFIG.COLOR_CLYDE;
     }
 }
-'use strict';
 
 // ============================================================================
 // SECTION 7: COLLISION SYSTEM
