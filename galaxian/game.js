@@ -2015,11 +2015,17 @@ class Game {
         const divers = this.aliens.filter(a => a.alive && a.state === 'diving');
         for (const alien of divers) {
             if (this.alienBullets.length >= CONFIG.MAX_ALIEN_BULLETS) break;
+            // Only fire when above the player — no point-blank shots
+            if (alien.y + 16 > this.player.y - 40) continue;
             if (Math.random() < 0.01) {
-                const angle = MathUtils.angleTo(
+                let angle = MathUtils.angleTo(
                     alien.x + 8, alien.y + 16,
                     this.player.x + 8, this.player.y
                 );
+                // Clamp to mostly-downward cone (60-120 degrees) — never horizontal
+                const MIN_ANGLE = Math.PI * 0.33; // ~60 degrees
+                const MAX_ANGLE = Math.PI * 0.67; // ~120 degrees
+                angle = MathUtils.clamp(angle, MIN_ANGLE, MAX_ANGLE);
                 const dx = Math.cos(angle) * CONFIG.ALIEN_BULLET_SPEED;
                 const dy = Math.sin(angle) * CONFIG.ALIEN_BULLET_SPEED;
                 this.alienBullets.push(new AlienBullet(alien.x + 7, alien.y + 14, dx, dy));
