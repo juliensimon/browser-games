@@ -1811,8 +1811,6 @@ const game = new Game();
 const canvas = document.getElementById('gameCanvas');
 const renderer = new Renderer(canvas);
 
-input.init();
-
 function gameLoop(timestamp) {
     let delta = timestamp - lastTime;
     lastTime = timestamp;
