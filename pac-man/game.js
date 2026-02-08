@@ -1475,7 +1475,7 @@ class Renderer {
         let offsetX = 0;
         for (let i = 0; i < text.length; i++) {
             const char = text[i];
-            const glyph = FONT[char];
+            const glyph = SPRITES.FONT[char];
             if (glyph) {
                 this.drawSprite(glyph, x + offsetX, y, color);
                 offsetX += 6;
