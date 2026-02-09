@@ -1029,7 +1029,7 @@ const CollisionSystem = {
     const hits = [];
 
     for (const icbm of icbms) {
-      if (!icbm.active) continue;
+      // ICBMs are managed by array add/remove, no active property
 
       for (const city of cities) {
         if (!city.alive) continue;
@@ -1055,7 +1055,7 @@ const CollisionSystem = {
     const hits = [];
 
     for (const icbm of icbms) {
-      if (!icbm.active) continue;
+      // ICBMs are managed by array add/remove, no active property
 
       for (const silo of silos) {
         if (silo.destroyed) continue;
@@ -1081,7 +1081,7 @@ const CollisionSystem = {
     const hits = [];
 
     for (const bomb of bombs) {
-      if (!bomb.active) continue;
+      // Bombs are managed by array add/remove, no active property
 
       for (const city of cities) {
         if (!city.alive) continue;
@@ -1107,7 +1107,7 @@ const CollisionSystem = {
     const hits = [];
 
     for (const bomb of bombs) {
-      if (!bomb.active) continue;
+      // Bombs are managed by array add/remove, no active property
 
       for (const silo of silos) {
         if (silo.destroyed) continue;
@@ -1479,6 +1479,8 @@ class Game {
     // Attack wave management
     this.attackSlots = [];  // Max CONFIG.MAX_ICBM_SLOTS
     this.nextAttackTimer = 0;
+    this.waveAttacksSpawned = 0;
+    this.waveAttacksTotal = 0;
 
     // Tally screen state
     this.tallyMissilesLeft = 0;
@@ -1568,7 +1570,9 @@ class Game {
     this.persistentABMTrails = [];
     this.persistentICBMTrails = [];
 
-    // Set up first attack
+    // Set up wave attacks (authentic arcade: 5 + wave number)
+    this.waveAttacksTotal = 5 + this.wave;
+    this.waveAttacksSpawned = 0;
     this.nextAttackTimer = 30;
 
     // Play incoming warning sound
@@ -1594,6 +1598,9 @@ class Game {
    * Spawn a new ICBM attack
    */
   spawnAttack() {
+    // Check if we've spawned all attacks for this wave
+    if (this.waveAttacksSpawned >= this.waveAttacksTotal) return;
+
     // Check if we've reached max simultaneous attacks
     if (this.attackSlots.length >= CONFIG.MAX_ICBM_SLOTS) return;
 
@@ -1615,8 +1622,8 @@ class Game {
     // Random start X position at top of screen
     const startX = Math.random() * CONFIG.LOGICAL_WIDTH;
 
-    // Speed increases with wave
-    const speed = CONFIG.ICBM_BASE_SPEED + this.wave * CONFIG.ICBM_SPEED_INCREMENT;
+    // Speed increases with wave (reduced from 0.6/0.1 to 0.4/0.05 for authentic feel)
+    const speed = 0.4 + this.wave * 0.05;
 
     // Create ICBM
     const icbm = new ICBM(startX, 0, target.x, target.y, speed);
@@ -1628,6 +1635,7 @@ class Game {
 
     this.icbms.push(icbm);
     this.attackSlots.push(icbm);
+    this.waveAttacksSpawned++;
   }
 
   /**
@@ -2001,12 +2009,12 @@ class Game {
     }
 
     // Check wave complete
-    const allAttacksFinished = this.attackSlots.length >= CONFIG.MAX_ICBM_SLOTS;
+    const allSpawnsComplete = this.waveAttacksSpawned >= this.waveAttacksTotal;
     const noActiveThreats = this.icbms.length === 0 &&
                            this.smartBombs.length === 0 &&
                            this.enemyBombs.length === 0;
 
-    if (allAttacksFinished && noActiveThreats) {
+    if (allSpawnsComplete && noActiveThreats) {
       this.startTally();
     }
 
