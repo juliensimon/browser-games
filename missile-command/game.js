@@ -187,10 +187,13 @@ const SILO_RUBBLE = [
 ];
 
 const BOMBER = [
-  "        ",
-  " XXXXXX ",
-  "XX XX XX",
-  "        "
+  "     X      ",
+  "    XXX     ",
+  "   XXXXX    ",
+  " XXXXXXXXX  ",
+  "XXXXXXXXXXX ",
+  " XXXXXXXXX  ",
+  "   XX XX    "
 ];
 
 const SATELLITE = [
