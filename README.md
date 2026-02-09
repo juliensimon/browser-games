@@ -16,6 +16,7 @@ Classic arcade games recreated in the browser with vanilla JavaScript and HTML5 
 | [Asteroids](asteroids/) | 1979 | The Atari classic. Pilot your ship through an asteroid field, blast rocks into fragments, and dodge UFOs. Vector-style graphics with phosphor glow effects, inertial physics, and hyperspace. | Open `asteroids/index.html` |
 | [Lunar Lander](lunar-lander/) | 1979 | The Atari classic. Guide your lunar module to a safe landing on the moon's surface. Altitude-dependent zoom, procedural terrain with scoring pads, fuel management, four difficulty missions, and vector phosphor glow. | Open `lunar-lander/index.html` |
 | [Centipede](centipede/) | 1980 | The Atari classic. Blast the centipede as it winds through a mushroom field. Tile-based mechanics with centipede splitting, poisoned mushrooms, spider proximity scoring, and the original 12-wave cycle. | Open `centipede/index.html` |
+| [Missile Command](missile-command/) | 1980 | The Atari classic. Defend six cities from nuclear missiles using three anti-missile batteries. Mouse aiming with 3-key silo firing, octagonal explosions, MIRV splitting, smart bomb evasion, 10 cycling color schemes, and progressive difficulty. | Open `missile-command/index.html` |
 | [Defender](defender/) | 1981 | The Williams classic. Defend humanoids from alien abduction across a horizontally scrolling landscape. Multiple enemy types, smart bombs, hyperspace, and a minimap scanner. | Open `defender/index.html` |
 
 ## Design Philosophy
