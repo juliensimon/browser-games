@@ -242,139 +242,19 @@ for (const char in FONT_STRINGS) {
   );
 }
 
-// 10 color schemes using authentic 3-bit RGB palette
-const COLOR_SCHEMES = [
-  // Scheme 0: Classic white/cyan
-  {
-    bg: '#000',
-    ground: '#0ff',
-    city: '#0ff',
-    silo: '#0ff',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#ff0', '#f00', '#f0f'],
-    text: '#0ff',
-    scoreText: '#fff'
-  },
-  // Scheme 1: Yellow theme
-  {
-    bg: '#000',
-    ground: '#ff0',
-    city: '#ff0',
-    silo: '#ff0',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#ff0', '#f00', '#f0f'],
-    text: '#ff0',
-    scoreText: '#fff'
-  },
-  // Scheme 2: Green theme
-  {
-    bg: '#000',
-    ground: '#0f0',
-    city: '#0f0',
-    silo: '#0f0',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#0ff', '#0f0', '#ff0'],
-    text: '#0f0',
-    scoreText: '#fff'
-  },
-  // Scheme 3: Magenta theme
-  {
-    bg: '#000',
-    ground: '#f0f',
-    city: '#f0f',
-    silo: '#f0f',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#f0f', '#f00', '#ff0'],
-    text: '#f0f',
-    scoreText: '#fff'
-  },
-  // Scheme 4: Red theme
-  {
-    bg: '#000',
-    ground: '#f00',
-    city: '#f00',
-    silo: '#f00',
-    abmTrail: '#fff',
-    icbmTrail: '#ff0',
-    crosshair: '#fff',
-    expColors: ['#fff', '#ff0', '#f00', '#f0f'],
-    text: '#f00',
-    scoreText: '#fff'
-  },
-  // Scheme 5: White theme
-  {
-    bg: '#000',
-    ground: '#fff',
-    city: '#fff',
-    silo: '#fff',
-    abmTrail: '#0ff',
-    icbmTrail: '#f00',
-    crosshair: '#0ff',
-    expColors: ['#fff', '#0ff', '#00f', '#f0f'],
-    text: '#fff',
-    scoreText: '#0ff'
-  },
-  // Scheme 6: Blue theme
-  {
-    bg: '#000',
-    ground: '#00f',
-    city: '#00f',
-    silo: '#00f',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#0ff', '#00f', '#f0f'],
-    text: '#00f',
-    scoreText: '#fff'
-  },
-  // Scheme 7: Cyan/Magenta
-  {
-    bg: '#000',
-    ground: '#0ff',
-    city: '#f0f',
-    silo: '#0ff',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#0ff', '#f0f', '#ff0'],
-    text: '#0ff',
-    scoreText: '#f0f'
-  },
-  // Scheme 8: Yellow/Green
-  {
-    bg: '#000',
-    ground: '#ff0',
-    city: '#0f0',
-    silo: '#ff0',
-    abmTrail: '#fff',
-    icbmTrail: '#f00',
-    crosshair: '#fff',
-    expColors: ['#fff', '#ff0', '#0f0', '#0ff'],
-    text: '#ff0',
-    scoreText: '#0f0'
-  },
-  // Scheme 9: Red/Yellow
-  {
-    bg: '#000',
-    ground: '#f00',
-    city: '#ff0',
-    silo: '#f00',
-    abmTrail: '#fff',
-    icbmTrail: '#0ff',
-    crosshair: '#fff',
-    expColors: ['#fff', '#ff0', '#f00', '#f0f'],
-    text: '#f00',
-    scoreText: '#ff0'
-  }
-];
+// Authentic 1980 arcade color scheme (based on MAME screenshots)
+// Cities, silos, and ground are all the same cyan/turquoise color
+// This matches the original arcade cabinet's blue-green phosphor display
+const COLOR_SCHEME = {
+  bg: '#000',              // Black background
+  structures: '#0cf',      // Cyan for cities, silos, and ground (all same!)
+  abmTrail: '#fff',        // White ABM trails
+  icbmTrail: '#f55',       // Reddish ICBM trails (darker red)
+  crosshair: '#fff',       // White crosshair
+  expColors: ['#fff', '#ff0', '#f80', '#f00'],  // White -> Yellow -> Orange -> Red
+  text: '#0cf',            // Cyan text
+  scoreText: '#fff'        // White score text
+};
 
 const SPRITES = {
   CITY_1, CITY_2, CITY_3, CITY_4, CITY_5, CITY_6,
@@ -382,8 +262,7 @@ const SPRITES = {
   SILO,
   BOMBER,
   SATELLITE,
-  FONT,
-  COLOR_SCHEMES
+  FONT
 };
 
 // ==================================================
@@ -1298,14 +1177,14 @@ const Renderer = {
    * @param {Object} state - Game state object
    */
   render(ctx, state) {
-    const cs = state.colorScheme;
+    const cs = COLOR_SCHEME;
 
     // Clear screen
     ctx.fillStyle = cs.bg;
     ctx.fillRect(0, 0, CONFIG.LOGICAL_WIDTH, CONFIG.LOGICAL_HEIGHT);
 
     // Draw ground
-    ctx.fillStyle = cs.ground;
+    ctx.fillStyle = cs.structures;
     ctx.fillRect(0, CONFIG.GROUND_Y, CONFIG.LOGICAL_WIDTH, CONFIG.GROUND_HEIGHT);
 
     // Render based on game state
@@ -1360,17 +1239,17 @@ const Renderer = {
       const city = state.cities[i];
       if (city.alive) {
         const sprite = SPRITES[`CITY_${city.spriteIndex + 1}`];
-        this.drawSprite(ctx, sprite, city.x - 8, city.y - 3, cs.city);
+        this.drawSprite(ctx, sprite, city.x - 8, city.y - 3, cs.structures);
       } else {
         // Draw rubble for destroyed cities
-        this.drawSprite(ctx, SPRITES.CITY_RUBBLE, city.x - 8, city.y - 3, cs.city);
+        this.drawSprite(ctx, SPRITES.CITY_RUBBLE, city.x - 8, city.y - 3, cs.structures);
       }
     }
 
     // Draw silos
     for (const silo of state.silos) {
       if (!silo.destroyed) {
-        this.drawSprite(ctx, SPRITES.SILO, silo.x - 8, silo.y - 8, cs.silo);
+        this.drawSprite(ctx, SPRITES.SILO, silo.x - 8, silo.y - 8, cs.structures);
 
         // Draw missile count
         if (silo.missiles > 0) {
@@ -1379,36 +1258,26 @@ const Renderer = {
         }
       } else {
         // Draw destroyed silo
-        this.drawSprite(ctx, SPRITES.SILO_RUBBLE, silo.x - 8, silo.y - 4, cs.silo);
+        this.drawSprite(ctx, SPRITES.SILO_RUBBLE, silo.x - 8, silo.y - 4, cs.structures);
       }
     }
 
-    // Draw ABM trails
-    ctx.strokeStyle = cs.abmTrail;
-    ctx.lineWidth = 1;
+    // Draw ABM trails (authentic ragged pixel-by-pixel rendering)
+    // ROM uses fixed-point incremental math, not smooth lines
+    ctx.fillStyle = cs.abmTrail;
     for (const abm of state.abms) {
-      if (abm.trail.length < 2) continue;
-
-      ctx.beginPath();
-      ctx.moveTo(abm.trail[0].x, abm.trail[0].y);
-      for (let i = 1; i < abm.trail.length; i++) {
-        ctx.lineTo(abm.trail[i].x, abm.trail[i].y);
+      for (const pt of abm.trail) {
+        ctx.fillRect(Math.floor(pt.x), Math.floor(pt.y), 1, 1);
       }
-      ctx.stroke();
     }
 
-    // Draw ICBM trails (includes smart bombs)
-    ctx.strokeStyle = cs.icbmTrail;
+    // Draw ICBM trails (authentic ragged pixel-by-pixel rendering)
+    ctx.fillStyle = cs.icbmTrail;
     const allIcbms = [...state.icbms, ...state.smartBombs, ...state.enemyBombs];
     for (const icbm of allIcbms) {
-      if (icbm.trail.length < 2) continue;
-
-      ctx.beginPath();
-      ctx.moveTo(icbm.trail[0].x, icbm.trail[0].y);
-      for (let i = 1; i < icbm.trail.length; i++) {
-        ctx.lineTo(icbm.trail[i].x, icbm.trail[i].y);
+      for (const pt of icbm.trail) {
+        ctx.fillRect(Math.floor(pt.x), Math.floor(pt.y), 1, 1);
       }
-      ctx.stroke();
     }
 
     // Draw explosions (octagonal!)
@@ -1516,9 +1385,6 @@ class Game {
     this.crosshairX = 128;
     this.crosshairY = 100;
 
-    // Rendering
-    this.colorScheme = COLOR_SCHEMES[0];
-
     // Timing
     this.frameCount = 0;
     this.stateTimer = 0;
@@ -1595,10 +1461,6 @@ class Game {
     this.wave++;
     this.state = 'waveStart';
     this.stateTimer = CONFIG.WAVE_START_DURATION;
-
-    // Cycle color scheme every 2 waves
-    const schemeIndex = Math.floor((this.wave - 1) / 2) % COLOR_SCHEMES.length;
-    this.colorScheme = COLOR_SCHEMES[schemeIndex];
 
     // Restore silos with missiles
     for (const silo of this.silos) {
@@ -2123,7 +1985,6 @@ class Game {
       scoreMultiplier: this.scoreMultiplier,
       crosshairX: this.crosshairX,
       crosshairY: this.crosshairY,
-      colorScheme: this.colorScheme,
       stateTimer: this.stateTimer,
       tallyMissilesLeft: this.tallyMissilesLeft,
       tallyCitiesLeft: this.tallyCitiesLeft,
