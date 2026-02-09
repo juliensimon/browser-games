@@ -86,82 +86,58 @@ const MathUtils = {
 // SECTION 3: SPRITES
 // ==================================================
 
-// City sprites (16×10 px each)
+// City sprites (16×6 px each) - authentic low-profile buildings
 const CITY_1 = [
   "                ",
-  "       XX       ",
-  "      XXXX      ",
-  "      XXXX      ",
-  "    XXXXXXXX    ",
-  "    XXXXXXXX    ",
-  "  XXXXXXXXXXXX  ",
-  "  XXXXXXXXXXXX  ",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX"
+  "                ",
+  "                ",
+  "                ",
+  "  X    XX    X  ",
+  " XXXXXXXXXXXXXX "
 ];
 
 const CITY_2 = [
   "                ",
-  "    XX      XX  ",
-  "   XXXX    XXXX ",
-  "   XXXX    XXXX ",
-  " XXXXXXX  XXXXXX",
-  " XXXXXXX  XXXXXX",
-  " XXXXXXXXXXXXXXX",
-  " XXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX",
+  "                ",
+  "                ",
+  "                ",
+  " XX  XXXXXX  XX ",
   "XXXXXXXXXXXXXXXX"
 ];
 
 const CITY_3 = [
   "                ",
-  "  XX        XX  ",
-  " XXXX      XXXX ",
-  " XXXX      XXXX ",
-  " XXXX  XX  XXXX ",
-  " XXXX XXXX XXXX ",
-  " XXXXXXXXXXXXXX ",
-  " XXXXXXXXXXXXXX ",
-  "XXXXXXXXXXXXXXXX",
+  "                ",
+  "                ",
+  "                ",
+  "X XX XX XX XX XX",
   "XXXXXXXXXXXXXXXX"
 ];
 
 const CITY_4 = [
   "                ",
-  "   XX    XX     ",
-  "  XXXX  XXXX    ",
-  "  XXXX  XXXX    ",
-  "XXXXXXXXXXXXXXX ",
-  "XXXXXXXXXXXXXXX ",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX",
+  "                ",
+  "                ",
+  "                ",
+  " XXXX  XX  XXXX ",
   "XXXXXXXXXXXXXXXX"
 ];
 
 const CITY_5 = [
   "                ",
-  "    XXXX        ",
-  "   XXXXXX       ",
-  "   XXXXXX       ",
-  " XXXXXXXXX   XX ",
-  " XXXXXXXXX  XXXX",
-  " XXXXXXXXXXXXXXX",
-  " XXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX"
+  "                ",
+  "                ",
+  "                ",
+  "  XXX XXXX XXX  ",
+  " XXXXXXXXXXXXXX "
 ];
 
 const CITY_6 = [
   "                ",
-  "  XX      XX    ",
-  " XXXX    XXXX   ",
-  " XXXX    XXXX   ",
-  " XXXX  XXXXXXXX ",
-  " XXXX  XXXXXXXX ",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX",
+  "                ",
+  "                ",
+  "                ",
+  " X XXXXXXXXXX X ",
   "XXXXXXXXXXXXXXXX"
 ];
 
@@ -171,11 +147,7 @@ const CITY_RUBBLE = [
   "                ",
   "                ",
   "                ",
-  "                ",
-  " X   XX  X   X  ",
-  "XX X XXX XX XXX ",
-  "XXXXXXXXXXXXXXXX",
-  "XXXXXXXXXXXXXXXX"
+  " X  X  XX X  X  "
 ];
 
 const SILO = [
@@ -702,6 +674,11 @@ class SoundEngine {
         this.bomberGain = null;
     }
 
+    enemyDestroyed() {
+        // Filtered pop - enemy destroyed
+        this._noise(0.12, 600, 0.2);
+    }
+
     gameOver() {
         // Game over fanfare - descending notes
         this.init();
@@ -940,7 +917,7 @@ class City {
     }
 
     getRect() {
-        return { x: this.x - 8, y: this.y - 5, w: 16, h: 10 };
+        return { x: this.x - 8, y: this.y - 3, w: 16, h: 6 };
     }
 }
 
@@ -1009,9 +986,8 @@ const CollisionSystem = {
       // Only active (expanding or full) explosions damage enemies
       if (exp.phase === 'shrink') continue;
 
-      // Check ICBMs
+      // Check ICBMs (no active property check - they're all active if in array)
       for (const icbm of icbms) {
-        if (!icbm.active) continue;
         if (exp.containsPoint(icbm.x, icbm.y)) {
           hits.push({ type: 'icbm', entity: icbm, explosion: exp });
         }
@@ -1019,7 +995,6 @@ const CollisionSystem = {
 
       // Check smart bombs
       for (const sb of smartBombs) {
-        if (!sb.active) continue;
         if (exp.containsPoint(sb.x, sb.y)) {
           hits.push({ type: 'smartBomb', entity: sb, explosion: exp });
         }
@@ -1027,7 +1002,6 @@ const CollisionSystem = {
 
       // Check bombers
       for (const bomber of bombers) {
-        if (!bomber.active) continue;
         if (exp.containsPoint(bomber.x, bomber.y)) {
           hits.push({ type: 'bomber', entity: bomber, explosion: exp });
         }
@@ -1035,7 +1009,6 @@ const CollisionSystem = {
 
       // Check satellites
       for (const sat of satellites) {
-        if (!sat.active) continue;
         if (exp.containsPoint(sat.x, sat.y)) {
           hits.push({ type: 'satellite', entity: sat, explosion: exp });
         }
@@ -1319,10 +1292,10 @@ const Renderer = {
       const city = state.cities[i];
       if (city.alive) {
         const sprite = SPRITES[`CITY_${city.spriteIndex + 1}`];
-        this.drawSprite(ctx, sprite, city.x - 8, city.y - 5, cs.city);
+        this.drawSprite(ctx, sprite, city.x - 8, city.y - 3, cs.city);
       } else {
         // Draw rubble for destroyed cities
-        this.drawSprite(ctx, SPRITES.CITY_RUBBLE, city.x - 8, city.y - 2, cs.city);
+        this.drawSprite(ctx, SPRITES.CITY_RUBBLE, city.x - 8, city.y - 3, cs.city);
       }
     }
 
