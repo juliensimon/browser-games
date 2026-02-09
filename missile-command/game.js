@@ -95,58 +95,59 @@ const MathUtils = {
 // SECTION 3: SPRITES
 // ==================================================
 
-// City sprites (16×6 px each) - authentic low-profile buildings
+// City sprites (16×6 px each) - authentic arcade building skylines
+// Based on ROM data - cities have distinct multi-story profiles
 const CITY_1 = [
   "                ",
-  "                ",
-  "                ",
-  "                ",
-  "  X    XX    X  ",
+  "      XX        ",
+  "     XXXX       ",
+  "  X  XXXX  XX   ",
+  "  XX XXXX XXXX  ",
   " XXXXXXXXXXXXXX "
 ];
 
 const CITY_2 = [
   "                ",
-  "                ",
-  "                ",
-  "                ",
-  " XX  XXXXXX  XX ",
+  "   XX    XX     ",
+  "   XX    XX     ",
+  " XXXX  XXXXXX   ",
+  " XXXX  XXXXXX X ",
   "XXXXXXXXXXXXXXXX"
 ];
 
 const CITY_3 = [
   "                ",
-  "                ",
-  "                ",
-  "                ",
-  "X XX XX XX XX XX",
+  " X              ",
+  " XX   XX   XX   ",
+  " XX   XX   XX X ",
+  "XXX XXXX XXXXXX ",
   "XXXXXXXXXXXXXXXX"
 ];
 
 const CITY_4 = [
   "                ",
-  "                ",
-  "                ",
-  "                ",
-  " XXXX  XX  XXXX ",
+  "     X          ",
+  "  XX XX XX      ",
+  "  XXXXXXXX  XX  ",
+  " XXXXXXXXXX XXXX",
   "XXXXXXXXXXXXXXXX"
 ];
 
 const CITY_5 = [
   "                ",
-  "                ",
-  "                ",
-  "                ",
-  "  XXX XXXX XXX  ",
+  "   XX           ",
+  "   XX   XX   X  ",
+  "  XXX  XXXX XXX ",
+  "  XXX XXXXX XXX ",
   " XXXXXXXXXXXXXX "
 ];
 
 const CITY_6 = [
   "                ",
-  "                ",
-  "                ",
-  "                ",
-  " X XXXXXXXXXX X ",
+  "       XX       ",
+  " XX    XX    XX ",
+  " XX  XXXXXX  XX ",
+  " XX XXXXXXXX XXX",
   "XXXXXXXXXXXXXXXX"
 ];
 
@@ -170,6 +171,19 @@ const SILO = [
   "   XXXXXXXXXX   ",
   "  XXXXXXXXXXXX  ",
   " XXXXXXXXXXXXXX "
+];
+
+const SILO_RUBBLE = [
+  "                ",
+  "                ",
+  "                ",
+  "                ",
+  "                ",
+  "                ",
+  "                ",
+  "                ",
+  "  X  X    X  X  ",
+  " X XX  XX XX X  "
 ];
 
 const BOMBER = [
@@ -242,6 +256,26 @@ for (const char in FONT_STRINGS) {
   );
 }
 
+// Convert ALL sprite string arrays to number arrays (CRITICAL FIX)
+// This fixes the bug where space characters were truthy, causing solid rectangles
+const CITY_1_NUM = CITY_1.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const CITY_2_NUM = CITY_2.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const CITY_3_NUM = CITY_3.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const CITY_4_NUM = CITY_4.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const CITY_5_NUM = CITY_5.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const CITY_6_NUM = CITY_6.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const CITY_RUBBLE_NUM = CITY_RUBBLE.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const SILO_NUM = SILO.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const BOMBER_NUM = BOMBER.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const SATELLITE_NUM = SATELLITE.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+const SILO_RUBBLE_NUM = SILO_RUBBLE.map(row => row.split('').map(c => c === 'X' ? 1 : 0));
+
+// Terrain profile - mountainous horizon with humps under cities/silos
+// 256 pixels wide, representing the bumpy ground profile
+const TERRAIN = [
+  "00011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111"
+].map(row => row.split('').map(c => c === '1' ? 1 : 0))[0];
+
 // Authentic 1980 arcade color scheme (based on MAME screenshots)
 // Cities, silos, and ground are all the same cyan/turquoise color
 // This matches the original arcade cabinet's blue-green phosphor display
@@ -257,11 +291,17 @@ const COLOR_SCHEME = {
 };
 
 const SPRITES = {
-  CITY_1, CITY_2, CITY_3, CITY_4, CITY_5, CITY_6,
-  CITY_RUBBLE,
-  SILO,
-  BOMBER,
-  SATELLITE,
+  CITY_1: CITY_1_NUM,
+  CITY_2: CITY_2_NUM,
+  CITY_3: CITY_3_NUM,
+  CITY_4: CITY_4_NUM,
+  CITY_5: CITY_5_NUM,
+  CITY_6: CITY_6_NUM,
+  CITY_RUBBLE: CITY_RUBBLE_NUM,
+  SILO: SILO_NUM,
+  SILO_RUBBLE: SILO_RUBBLE_NUM,
+  BOMBER: BOMBER_NUM,
+  SATELLITE: SATELLITE_NUM,
   FONT
 };
 
@@ -478,6 +518,24 @@ class SoundEngine {
         osc.stop(t + 0.6);
     }
 
+    tallyStart() {
+        // Brief ascending tone - tally screen start
+        this.init();
+        const t = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(440, t);
+        osc.frequency.exponentialRampToValueAtTime(880, t + 0.1);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+    }
+
     bonusCount() {
         // Blip - tally tick
         this._tone('square', 880, 0.05, 0.15);
@@ -649,9 +707,7 @@ class ABM {
         this.y += this.vy;
         this.trail.push({ x: this.x, y: this.y });
 
-        if (this.trail.length > CONFIG.ABM_TRAIL_MAX) {
-            this.trail.shift();
-        }
+        // No trail length limit - trails persist entire wave
 
         if (MathUtils.distance(this.x, this.y, this.targetX, this.targetY) < this.speed) {
             this.reachedTarget = true;
@@ -688,9 +744,7 @@ class ICBM {
         this.y += this.vy;
         this.trail.push({ x: this.x, y: this.y });
 
-        if (this.trail.length > 40) {
-            this.trail.shift();
-        }
+        // No trail length limit - trails persist entire wave
 
         // Check MIRV split
         if (this.isMIRV && !this.hasSplit && this.y >= this.splitAltitude) {
@@ -734,9 +788,7 @@ class SmartBomb extends ICBM {
         this.y += this.vy;
         this.trail.push({ x: this.x, y: this.y });
 
-        if (this.trail.length > 40) {
-            this.trail.shift();
-        }
+        // No trail length limit - trails persist entire wave
 
         if (this.y >= this.targetY) return 'hit';
         return null;
@@ -752,10 +804,12 @@ class Explosion {
         this.maxRadius = CONFIG.EXPLOSION_MAX_RADIUS;
         this.phase = 'grow'; // grow -> hold -> shrink
         this.holdCounter = 0;
-        this.colorFrame = 0;
+        this.frameAge = 0;
     }
 
     update() {
+        this.frameAge++;
+
         if (this.phase === 'grow') {
             this.radius += CONFIG.EXPLOSION_GROW_RATE;
             if (this.radius >= this.maxRadius) {
@@ -775,7 +829,6 @@ class Explosion {
             }
         }
 
-        this.colorFrame = (this.colorFrame + 1) % 4;
         return true; // Still active
     }
 
@@ -789,7 +842,8 @@ class Explosion {
 
     getColorCycle() {
         // Returns index 0-3 for cycling through expColors[]
-        return this.colorFrame;
+        // Slow down cycle: every 5 frames instead of every frame
+        return Math.floor(this.frameAge / 5) % 4;
     }
 }
 
@@ -1187,6 +1241,15 @@ const Renderer = {
     ctx.fillStyle = cs.structures;
     ctx.fillRect(0, CONFIG.GROUND_Y, CONFIG.LOGICAL_WIDTH, CONFIG.GROUND_HEIGHT);
 
+    // Draw terrain profile (mountainous horizon)
+    ctx.fillStyle = cs.structures;
+    for (let x = 0; x < TERRAIN.length && x < CONFIG.LOGICAL_WIDTH; x++) {
+      if (TERRAIN[x]) {
+        // Terrain pixel extends up from ground line
+        ctx.fillRect(x, CONFIG.GROUND_Y - 1, 1, 1);
+      }
+    }
+
     // Render based on game state
     if (state.state === 'attract') {
       this.renderAttractScreen(ctx, cs, state);
@@ -1201,6 +1264,10 @@ const Renderer = {
    * Render attract screen
    */
   renderAttractScreen(ctx, cs, state) {
+    // Draw gameplay elements in background (cities, silos)
+    this.renderGameplay(ctx, state, cs);
+
+    // Overlay attract text
     this.drawCenteredText(ctx, 'MISSILE COMMAND', 60, cs.text);
 
     this.drawCenteredText(ctx, 'MOUSE = AIM', 100, cs.text);
@@ -1262,7 +1329,15 @@ const Renderer = {
       }
     }
 
-    // Draw ABM trails (authentic ragged pixel-by-pixel rendering)
+    // Draw persistent ABM trails (from previous missiles that detonated)
+    ctx.fillStyle = cs.abmTrail;
+    for (const trail of state.persistentABMTrails) {
+      for (const pt of trail) {
+        ctx.fillRect(Math.floor(pt.x), Math.floor(pt.y), 1, 1);
+      }
+    }
+
+    // Draw active ABM trails (authentic ragged pixel-by-pixel rendering)
     // ROM uses fixed-point incremental math, not smooth lines
     ctx.fillStyle = cs.abmTrail;
     for (const abm of state.abms) {
@@ -1271,7 +1346,15 @@ const Renderer = {
       }
     }
 
-    // Draw ICBM trails (authentic ragged pixel-by-pixel rendering)
+    // Draw persistent ICBM trails (from previous missiles that hit/were destroyed)
+    ctx.fillStyle = cs.icbmTrail;
+    for (const trail of state.persistentICBMTrails) {
+      for (const pt of trail) {
+        ctx.fillRect(Math.floor(pt.x), Math.floor(pt.y), 1, 1);
+      }
+    }
+
+    // Draw active ICBM trails (authentic ragged pixel-by-pixel rendering)
     ctx.fillStyle = cs.icbmTrail;
     const allIcbms = [...state.icbms, ...state.smartBombs, ...state.enemyBombs];
     for (const icbm of allIcbms) {
@@ -1381,6 +1464,10 @@ class Game {
     this.explosions = [];
     this.enemyBombs = [];
 
+    // Persistent trails (remain after missile destroyed)
+    this.persistentABMTrails = [];
+    this.persistentICBMTrails = [];
+
     // Input state
     this.crosshairX = 128;
     this.crosshairY = 100;
@@ -1476,6 +1563,10 @@ class Game {
     this.explosions = [];
     this.enemyBombs = [];
     this.attackSlots = [];
+
+    // Clear persistent trails (start fresh each wave)
+    this.persistentABMTrails = [];
+    this.persistentICBMTrails = [];
 
     // Set up first attack
     this.nextAttackTimer = 30;
@@ -1642,6 +1733,10 @@ class Game {
         // ABM reached target, create explosion
         this.explosions.push(new Explosion(abm.targetX, abm.targetY, false));
         this.sound.abmExplode();
+
+        // Save trail to persistent storage (remains visible entire wave)
+        this.persistentABMTrails.push([...abm.trail]);
+
         return false;
       }
       return true;
@@ -1681,6 +1776,9 @@ class Game {
         this.explosions.push(new Explosion(icbm.x, icbm.y, true));
         this.sound.icbmExplode();
 
+        // Save trail to persistent storage
+        this.persistentICBMTrails.push([...icbm.trail]);
+
         // Remove from attack slots
         const idx = this.attackSlots.indexOf(icbm);
         if (idx >= 0) this.attackSlots.splice(idx, 1);
@@ -1699,6 +1797,9 @@ class Game {
         this.explosions.push(new Explosion(sb.x, sb.y, true));
         this.sound.icbmExplode();
 
+        // Save trail to persistent storage
+        this.persistentICBMTrails.push([...sb.trail]);
+
         // Remove from attack slots
         const idx = this.attackSlots.indexOf(sb);
         if (idx >= 0) this.attackSlots.splice(idx, 1);
@@ -1716,6 +1817,10 @@ class Game {
       if (result === 'hit') {
         this.explosions.push(new Explosion(bomb.x, bomb.y, true));
         this.sound.icbmExplode();
+
+        // Save trail to persistent storage
+        this.persistentICBMTrails.push([...bomb.trail]);
+
         return false;
       }
 
@@ -1765,6 +1870,9 @@ class Game {
 
     for (const hit of hits) {
       if (hit.type === 'icbm') {
+        // Save trail to persistent storage
+        this.persistentICBMTrails.push([...hit.entity.trail]);
+
         // Remove ICBM
         this.icbms = this.icbms.filter(i => i !== hit.entity);
 
@@ -1778,6 +1886,9 @@ class Game {
         this.sound.enemyDestroyed();
 
       } else if (hit.type === 'smartBomb') {
+        // Save trail to persistent storage
+        this.persistentICBMTrails.push([...hit.entity.trail]);
+
         // Remove smart bomb
         this.smartBombs = this.smartBombs.filter(sb => sb !== hit.entity);
 
@@ -1816,6 +1927,9 @@ class Game {
       // Destroy city
       city.destroy();
 
+      // Save trail to persistent storage
+      this.persistentICBMTrails.push([...icbm.trail]);
+
       // Remove ICBM
       this.icbms = this.icbms.filter(i => i !== icbm);
 
@@ -1833,6 +1947,9 @@ class Game {
     for (const { icbm, silo } of siloHits) {
       // Destroy silo
       silo.destroy();
+
+      // Save trail to persistent storage
+      this.persistentICBMTrails.push([...icbm.trail]);
 
       // Remove ICBM
       this.icbms = this.icbms.filter(i => i !== icbm);
@@ -1979,6 +2096,8 @@ class Game {
       satellites: this.satellites,
       explosions: this.explosions,
       enemyBombs: this.enemyBombs,
+      persistentABMTrails: this.persistentABMTrails,
+      persistentICBMTrails: this.persistentICBMTrails,
       score: this.score,
       highScore: this.highScore,
       wave: this.wave,
