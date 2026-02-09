@@ -1,84 +1,103 @@
-# Missile Command (1980)
+# Missile Command
 
-A faithful browser-based recreation of Atari's classic **Missile Command** arcade game, featuring **mouse aiming** and **keyboard firing** with authentic octagonal explosions, 10 color schemes, and progressive difficulty.
+A browser-based recreation of the classic 1980 Atari arcade game, built with vanilla JavaScript and HTML5 Canvas. Features mouse aiming with 3-key silo firing, persistent missile trails, octagonal explosions, wave-cycling color schemes, mountainous terrain, and authentic POKEY chip-era sound synthesis.
 
-![Missile Command Gameplay](mc-explosions.png)
+![Attract Screen](screenshots/attract-screen.png)
 
-## Controls
+![Gameplay](screenshots/gameplay.png)
 
-- **Mouse**: Aim crosshair
-- **Keys 1, 2, 3**: Fire from left, center, right anti-missile batteries
-- **Enter**: Start game
+## How to Play
 
-## Gameplay
+Open `index.html` in any modern browser. No build step or dependencies required.
 
-Defend six cities from incoming ballistic missiles using three anti-missile batteries. Each battery has a limited supply of missiles and different firing speeds:
+### Controls
 
-- **Left/Right silos**: 10 missiles each, slower speed (precise)
-- **Center silo**: 10 missiles, faster speed (rapid response)
+| Control | Action |
+|---------|--------|
+| Mouse | Aim crosshair |
+| Key 1 | Fire from left silo (10 missiles) |
+| Key 2 | Fire from center silo (10 missiles) |
+| Key 3 | Fire from right silo (10 missiles) |
+| Enter | Start game |
 
-### Enemy Types
-- **ICBMs**: Standard ballistic missiles
-- **MIRVs**: Split into 2-3 warheads mid-flight
-- **Smart Bombs**: Evade your explosions (wave 3+)
-- **Bombers**: Drop bombs on cities (wave 5+)
-- **Satellites**: High-altitude targets (wave 7+)
+## Features
 
-### Scoring
-- **Missile destroyed**: 25 points
-- **Smart bomb**: 125 points
-- **Bomber/Satellite**: 100 points
-- **Wave bonuses**: 5 points per remaining ABM, 100 per surviving city
-- **Score multiplier**: Increases 1x → 6x over successive waves
+- Mouse-driven crosshair aiming with 1:1 position mapping
+- Three anti-missile batteries with direct silo selection (keys 1/2/3)
+- Persistent missile trails throughout each wave (authentic battle history network)
+- Octagonal explosions using 3/8 slope scan-line algorithm (13px max radius)
+- 10 wave-cycling color schemes matching authentic 3-bit RGB arcade palette
+- Mountainous terrain with bumpy horizon profile
+- 6 cities with distinct multi-story building skylines (4-6px tall sprites)
+- 30 interceptors per wave (10 per silo), replenished each wave
+- Progressive difficulty: missile count (2 + wave), speed (0.4 + 0.05×wave px/frame)
+- Enemy types: ICBMs, MIRVs (split mid-flight), Smart Bombs (wave 3+), Bombers with mines (wave 5+), Satellites (wave 7+)
+- Wave-based scoring with city survival bonuses and remaining ABM multipliers
+- Procedural audio via Web Audio API (POKEY chip-style synthesis)
+- Attract screen with ground layer preview and control instructions
 
-## Technical Features
+## Game History
 
-### Authentic 1980 Arcade Mechanics
-- **Octagonal explosions** with 3/8 slope (max radius 13px)
-- **10 color schemes** cycling every 2 waves (authentic 3-bit RGB palette)
-- **MIRV splitting** at altitude 80-160 with multiple warheads
-- **Smart bomb evasion** using perpendicular trajectory adjustment
-- **Attack pacing**: No spawns while highest ICBM above threshold
-- **Collision detection**: Every 5 frames (authentic timing)
+Missile Command was designed by **Dave Theurer** and released by **Atari** in July 1980. It became one of the most iconic and highest-grossing arcade games of the golden age, earning its place in video game history as both a technical achievement and a cultural touchstone during the Cold War era.
 
-### Modern Controls
-- **Mouse aiming**: Direct 1:1 position mapping (no acceleration)
-- **3-key firing**: Keys 1/2/3 map to left/center/right silos (authentic 3-button arcade layout)
-- **Hidden cursor**: Browser cursor hidden, crosshair rendered in-game
+### Origins
 
-## Implementation
+Dave Theurer, who had previously worked on Atari's **Lunar Lander** vector game, wanted to create something with broader emotional resonance. Inspired by the ever-present nuclear threat of the late Cold War, he conceived a game where the player must defend cities from incoming ballistic missiles — a scenario that felt uncomfortably plausible to 1980 audiences. The game's original working title was "Armageddon."
 
-- **Resolution**: 256×231 logical pixels, scaled 3x → 768×693 display
-- **Rendering**: Pixel-perfect raster graphics with custom octagonal scan-line algorithm
-- **Architecture**: 10-section modular design (~2100 lines)
-- **Sound**: Web Audio API with 11 distinct sound effects
+The trackball control scheme was revolutionary for its time, allowing fast, precise aiming that felt natural and panic-inducing as waves intensified. Theurer later said he suffered nightmares during development about being unable to save cities from nuclear destruction.
 
-## Building
+### The Hardware
 
-Built using parallel agent architecture:
-1. **foundations-agent**: CONFIG, MathUtils, SPRITES, InputHandler
-2. **audio-entities-agent**: SoundEngine, Entity classes
-3. **game-engine-agent**: CollisionSystem, Renderer, Game state machine
+Missile Command ran on Atari's **6502-based hardware** with **256×231 pixel resolution** using a **3-bit RGB palette** (8 base colors with variations). The cabinet featured:
 
-All sections concatenated into single `game.js` file for optimal performance.
+- **Trak-Ball controller** — fast analog control for crosshair positioning
+- **Three fire buttons** — left, center, right (mapping to the three silos)
+- **POKEY sound chip** — 4-channel audio for explosions, launches, and alerts
+- **Raster display** — CRT monitor in cocktail or upright cabinet
 
-## Authenticity Notes
+The game's technical achievement was its **octagonal explosion collision detection**, implemented using clever bit-shifting and scan-line algorithms on the 6502 processor. Each explosion used a mathematically precise 3/8 slope geometry that created the distinctive non-circular blast radius.
 
-Based on original 1980 Atari arcade ROM disassembly analysis:
-- Octagonal explosion geometry matches 6502 bit-shifting patterns
-- ABM speeds: side silos 3px/frame, center 7px/frame
-- 10 authentic color schemes from 3-bit RGB palette
-- Wave progression and difficulty curve faithful to original
+### Arcade Phenomenon
 
-## Deviations from Original
+Missile Command was an instant commercial success, selling over **20,000 cabinets** in its first year and generating approximately **$100 million in revenue**. The game resonated deeply with players who lived under the constant threat of nuclear war — every failed defense felt viscerally real.
 
-- **Mouse instead of trackball**: Direct position mapping (more precise than inertial trackball)
-- **Keyboard keys instead of physical buttons**: Maps to left/center/right silos authentically
-- **No coin-op mechanics**: Free play, no credit system
+The game introduced several firsts and innovations:
 
----
+- **Trackball control** — one of the first arcade games to use trackball for aiming
+- **Persistent visual history** — missile trails remained on screen throughout the wave
+- **Multiple simultaneous threats** — up to 8 missiles on screen, forcing triage decisions
+- **Unwinnable endgame** — "THE END" message after final city destruction (no continues)
+- **Emotional stakes** — defending cities felt personal in the Cold War context
 
-**Year**: 1980
-**Developer**: Atari
-**Designer**: Dave Theurer
-**Platform**: Browser (HTML5 Canvas + JavaScript)
+### Cultural Impact
+
+Missile Command became more than a game — it was a mirror of Cold War anxiety. Players weren't saving abstract targets; they were defending humanity from annihilation. The game's famous finale, where all cities are destroyed and the screen displays "THE END," drove home the futility of nuclear war.
+
+Dave Theurer reported having recurring nightmares where he couldn't save the cities, a testament to the psychological weight of the game's theme. The game has been preserved in the **Smithsonian American Art Museum** and inducted into the **World Video Game Hall of Fame** in 2015.
+
+Missile Command spawned numerous sequels and ports: **Super Missile Attack** (Atari 2600), **Missile Command II** (arcade prototype), and modern reimaginings like **Missile Command: Recharged** (2020). Its influence can be seen in tower defense games, real-time strategy, and any game involving strategic resource management under pressure.
+
+### Legacy
+
+The game remains a touchstone for discussions about video games as art and social commentary. Its unwinnable nature and apocalyptic theme make it one of the few arcade games from the golden age to carry genuine philosophical weight. Designer Dave Theurer went on to create **Tempest** (1981) and **I, Robot** (1984), but Missile Command remains his most culturally significant work.
+
+## Technical Details
+
+This implementation is a single-file JavaScript game (`game.js`, ~2200 lines) organized into clearly separated sections:
+
+1. **CONFIG** — All tunable constants (display resolution, missile speeds, scoring rules, wave progression, colors)
+2. **Math Utilities** — Clamping, lerp, angle calculation, distance, AABB collision detection
+3. **Sprite Data + Font** — Pixel-art sprites for cities, silos, bomber, satellite; terrain profile; bitmap font
+4. **Sound Engine** — Procedural audio via Web Audio API (ABM launch chirp, explosions, siren, tallies)
+5. **Input Handler** — Mouse position tracking, keyboard input with event-driven buffer, cursor hiding
+6. **Entity Classes** — ABM, ICBM, SmartBomb, Explosion, EnemyBomb, Bomber, Satellite, City, Silo
+7. **Collision System** — Explosion-vs-missiles, missiles-vs-cities, missiles-vs-silos, bombs-vs-structures
+8. **Renderer** — Scaled pixel-art rendering in 256×231 logical space at 3×, terrain, persistent trails, octagonal explosions
+9. **Game State Machine** — Attract, wave start, playing, wave complete, tally screen, game over
+10. **Main Loop** — Fixed 60Hz timestep with accumulator pattern
+
+No external libraries or frameworks. Just HTML, CSS, JavaScript, and the Canvas and Web Audio APIs.
+
+## License
+
+This is a fan recreation for educational purposes. Missile Command is a trademark of Atari, Inc.
