@@ -1352,22 +1352,38 @@ const Renderer = {
   },
 
   /**
-   * Render attract screen (authentic arcade style)
+   * Render attract screen (authentic arcade style with explosion animation)
    */
   renderAttractScreen(ctx, cs, state) {
     // Draw gameplay elements in background (cities, silos)
     this.renderGameplay(ctx, state, cs);
 
-    // Large title
-    this.drawCenteredText(ctx, 'MISSILE', 50, cs.text);
-    this.drawCenteredText(ctx, 'COMMAND', 60, cs.text);
+    // Authentic arcade title: "USE MISSILE COMMAND"
+    const titleOpacity = Math.max(0, 1 - (state.attractAnimationFrame / 200));
 
-    // Instructions
-    this.drawCenteredText(ctx, 'DEFEND CITIES', 85, cs.text);
+    if (titleOpacity > 0) {
+      // Draw title that gets "destroyed" by explosions
+      ctx.globalAlpha = titleOpacity;
+      this.drawCenteredText(ctx, 'USE', 40, cs.text);
+      this.drawCenteredText(ctx, 'MISSILE', 50, cs.text);
+      this.drawCenteredText(ctx, 'COMMAND', 60, cs.text);
+      ctx.globalAlpha = 1.0;
+    }
 
-    // Controls (smaller text)
-    this.drawCenteredText(ctx, 'MOUSE TO AIM', 110, cs.scoreText);
-    this.drawCenteredText(ctx, 'KEYS 1 2 3 FIRE SILOS', 120, cs.scoreText);
+    // Draw explosions over title (authentic arcade effect)
+    for (const exp of state.attractExplosions) {
+      const colorIdx = exp.getColorCycle();
+      const color = cs.expColors[colorIdx];
+      this.drawOctagon(ctx, Math.floor(exp.x), Math.floor(exp.y),
+                       Math.floor(exp.radius), color);
+    }
+
+    // After explosion animation, show instructions
+    if (state.attractAnimationFrame > 220) {
+      this.drawCenteredText(ctx, 'DEFEND CITIES', 85, cs.text);
+      this.drawCenteredText(ctx, 'MOUSE TO AIM', 110, cs.scoreText);
+      this.drawCenteredText(ctx, 'KEYS 1 2 3 FIRE SILOS', 120, cs.scoreText);
+    }
 
     // Scrolling "PRESS START" message (authentic arcade)
     const scrollOffset = Math.floor((state.frameCount / 2) % 300) - 50;
@@ -1551,6 +1567,10 @@ class Game {
     this.scoreMultiplier = 1;
     this.nextBonusCity = CONFIG.BONUS_CITY_THRESHOLD;
     this.colorScheme = COLOR_SCHEMES[0];
+
+    // Attract screen animation
+    this.attractExplosions = [];
+    this.attractAnimationFrame = 0;
 
     // Entities
     this.silos = [];
@@ -1804,9 +1824,28 @@ class Game {
   }
 
   /**
-   * Update attract screen
+   * Update attract screen (with explosion animation)
    */
   updateAttract() {
+    this.attractAnimationFrame++;
+
+    // Create explosions over title letters every 10 frames (for first 200 frames)
+    if (this.attractAnimationFrame < 200 && this.attractAnimationFrame % 10 === 0) {
+      // Random position over title area
+      const x = 60 + Math.random() * 136;  // Center area where title is
+      const y = 45 + Math.random() * 30;   // Title height area
+      this.attractExplosions.push(new Explosion(x, y, false));
+    }
+
+    // Update attract explosions
+    this.attractExplosions = this.attractExplosions.filter(exp => exp.update());
+
+    // Reset animation after it completes
+    if (this.attractAnimationFrame > 400) {
+      this.attractAnimationFrame = 0;
+      this.attractExplosions = [];
+    }
+
     if (this.input.isStart()) {
       this.startGame();
     }
@@ -2219,7 +2258,9 @@ class Game {
       tallyMissilesLeft: this.tallyMissilesLeft,
       tallyCitiesLeft: this.tallyCitiesLeft,
       frameCount: this.frameCount,
-      colorScheme: this.colorScheme
+      colorScheme: this.colorScheme,
+      attractExplosions: this.attractExplosions,
+      attractAnimationFrame: this.attractAnimationFrame
     };
   }
 }
