@@ -1819,8 +1819,8 @@ function gameLoop(timestamp) {
     accumulator += delta;
 
     while (accumulator >= CONFIG.FRAME_TIME) {
-        input.update();
         game.update(input, sound, CONFIG.FRAME_TIME);
+        input.update();
         accumulator -= CONFIG.FRAME_TIME;
     }
 
