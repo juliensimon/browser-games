@@ -187,13 +187,14 @@ const SILO_RUBBLE = [
 ];
 
 const BOMBER = [
-  "     X      ",
-  "    XXX     ",
-  "   XXXXX    ",
-  " XXXXXXXXX  ",
-  "XXXXXXXXXXX ",
-  " XXXXXXXXX  ",
-  "   XX XX    "
+  "XXXXXXXX",
+  "X      X",
+  "X  XX  X",
+  "X  XX  X",
+  "X  XX  X",
+  "X  XX  X",
+  "X      X",
+  "XXXXXXXX"
 ];
 
 const SATELLITE = [
@@ -1021,11 +1022,13 @@ class EnemyBomb {
         this.angle = MathUtils.angle(startX, startY, targetX, targetY);
         this.vx = Math.cos(this.angle) * speed;
         this.vy = Math.sin(this.angle) * speed;
+        this.trail = [{ x: startX, y: startY }];
     }
 
     update() {
         this.x += this.vx;
         this.y += this.vy;
+        this.trail.push({ x: this.x, y: this.y });
 
         // Check if hit ground
         if (this.y >= CONFIG.GROUND_Y) {
