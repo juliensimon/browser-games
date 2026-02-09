@@ -276,19 +276,110 @@ const TERRAIN = [
   "00011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111000011111100001111110000111111"
 ].map(row => row.split('').map(c => c === '1' ? 1 : 0))[0];
 
-// Authentic 1980 arcade color scheme (based on MAME screenshots)
-// Cities, silos, and ground are all the same cyan/turquoise color
-// This matches the original arcade cabinet's blue-green phosphor display
-const COLOR_SCHEME = {
-  bg: '#000',              // Black background
-  structures: '#0cf',      // Cyan for cities, silos, and ground (all same!)
-  abmTrail: '#fff',        // White ABM trails
-  icbmTrail: '#f55',       // Reddish ICBM trails (darker red)
-  crosshair: '#fff',       // White crosshair
-  expColors: ['#fff', '#ff0', '#f80', '#f00'],  // White -> Yellow -> Orange -> Red
-  text: '#0cf',            // Cyan text
-  scoreText: '#fff'        // White score text
-};
+// Authentic 1980 arcade color schemes (cycle every 2 waves)
+// Based on ROM disassembly - 10 different color palettes
+const COLOR_SCHEMES = [
+  { // Scheme 0 - Classic cyan
+    bg: '#000',
+    structures: '#0cf',
+    abmTrail: '#fff',
+    icbmTrail: '#f55',
+    crosshair: '#fff',
+    expColors: ['#fff', '#ff0', '#f80', '#f00'],
+    text: '#0cf',
+    scoreText: '#fff'
+  },
+  { // Scheme 1 - Blue
+    bg: '#000',
+    structures: '#07f',
+    abmTrail: '#fff',
+    icbmTrail: '#f0f',
+    crosshair: '#fff',
+    expColors: ['#fff', '#0ff', '#07f', '#00f'],
+    text: '#07f',
+    scoreText: '#fff'
+  },
+  { // Scheme 2 - Green
+    bg: '#000',
+    structures: '#0f0',
+    abmTrail: '#fff',
+    icbmTrail: '#f70',
+    crosshair: '#fff',
+    expColors: ['#fff', '#ff0', '#0f0', '#070'],
+    text: '#0f0',
+    scoreText: '#fff'
+  },
+  { // Scheme 3 - Yellow
+    bg: '#000',
+    structures: '#ff0',
+    abmTrail: '#fff',
+    icbmTrail: '#f0f',
+    crosshair: '#fff',
+    expColors: ['#fff', '#ff0', '#f70', '#f00'],
+    text: '#ff0',
+    scoreText: '#fff'
+  },
+  { // Scheme 4 - Red/Pink
+    bg: '#000',
+    structures: '#f0f',
+    abmTrail: '#fff',
+    icbmTrail: '#0ff',
+    crosshair: '#fff',
+    expColors: ['#fff', '#f0f', '#f07', '#f00'],
+    text: '#f0f',
+    scoreText: '#fff'
+  },
+  { // Scheme 5 - Orange
+    bg: '#000',
+    structures: '#f70',
+    abmTrail: '#fff',
+    icbmTrail: '#0f7',
+    crosshair: '#fff',
+    expColors: ['#fff', '#ff0', '#f70', '#f00'],
+    text: '#f70',
+    scoreText: '#fff'
+  },
+  { // Scheme 6 - Purple
+    bg: '#000',
+    structures: '#70f',
+    abmTrail: '#fff',
+    icbmTrail: '#ff0',
+    crosshair: '#fff',
+    expColors: ['#fff', '#f0f', '#70f', '#707'],
+    text: '#70f',
+    scoreText: '#fff'
+  },
+  { // Scheme 7 - Teal
+    bg: '#000',
+    structures: '#0f7',
+    abmTrail: '#fff',
+    icbmTrail: '#f07',
+    crosshair: '#fff',
+    expColors: ['#fff', '#0ff', '#0f7', '#077'],
+    text: '#0f7',
+    scoreText: '#fff'
+  },
+  { // Scheme 8 - Light Blue
+    bg: '#000',
+    structures: '#0ff',
+    abmTrail: '#fff',
+    icbmTrail: '#f77',
+    crosshair: '#fff',
+    expColors: ['#fff', '#0ff', '#07f', '#00f'],
+    text: '#0ff',
+    scoreText: '#fff'
+  },
+  { // Scheme 9 - Lime
+    bg: '#000',
+    structures: '#7f0',
+    abmTrail: '#fff',
+    icbmTrail: '#f07',
+    crosshair: '#fff',
+    expColors: ['#fff', '#ff0', '#7f0', '#070'],
+    text: '#7f0',
+    scoreText: '#fff'
+  }
+];
 
 const SPRITES = {
   CITY_1: CITY_1_NUM,
@@ -1231,7 +1322,7 @@ const Renderer = {
    * @param {Object} state - Game state object
    */
   render(ctx, state) {
-    const cs = COLOR_SCHEME;
+    const cs = state.colorScheme || COLOR_SCHEMES[0];
 
     // Clear screen
     ctx.fillStyle = cs.bg;
@@ -1261,23 +1352,30 @@ const Renderer = {
   },
 
   /**
-   * Render attract screen
+   * Render attract screen (authentic arcade style)
    */
   renderAttractScreen(ctx, cs, state) {
     // Draw gameplay elements in background (cities, silos)
     this.renderGameplay(ctx, state, cs);
 
-    // Overlay attract text
-    this.drawCenteredText(ctx, 'MISSILE COMMAND', 60, cs.text);
+    // Large title
+    this.drawCenteredText(ctx, 'MISSILE', 50, cs.text);
+    this.drawCenteredText(ctx, 'COMMAND', 60, cs.text);
 
-    this.drawCenteredText(ctx, 'MOUSE = AIM', 100, cs.text);
-    this.drawCenteredText(ctx, '1 2 3 = FIRE SILOS', 110, cs.text);
+    // Instructions
+    this.drawCenteredText(ctx, 'DEFEND CITIES', 85, cs.text);
 
-    this.drawCenteredText(ctx, 'PRESS ENTER TO START', 140, cs.text);
+    // Controls (smaller text)
+    this.drawCenteredText(ctx, 'MOUSE TO AIM', 110, cs.scoreText);
+    this.drawCenteredText(ctx, 'KEYS 1 2 3 FIRE SILOS', 120, cs.scoreText);
+
+    // Scrolling "PRESS START" message (authentic arcade)
+    const scrollOffset = Math.floor((state.frameCount / 2) % 300) - 50;
+    this.drawText(ctx, 'PRESS ENTER TO START', scrollOffset, 190, cs.text);
 
     // Show high score
     if (state.highScore > 0) {
-      this.drawCenteredText(ctx, `HIGH SCORE ${state.highScore}`, 180, cs.scoreText);
+      this.drawCenteredText(ctx, `HIGH ${state.highScore}`, 180, cs.scoreText);
     }
   },
 
@@ -1452,6 +1550,7 @@ class Game {
     this.wave = 0;
     this.scoreMultiplier = 1;
     this.nextBonusCity = CONFIG.BONUS_CITY_THRESHOLD;
+    this.colorScheme = COLOR_SCHEMES[0];
 
     // Entities
     this.silos = [];
@@ -1551,6 +1650,10 @@ class Game {
     this.state = 'waveStart';
     this.stateTimer = CONFIG.WAVE_START_DURATION;
 
+    // Cycle color scheme every 2 waves (authentic arcade behavior)
+    const schemeIndex = Math.floor((this.wave - 1) / 2) % COLOR_SCHEMES.length;
+    this.colorScheme = COLOR_SCHEMES[schemeIndex];
+
     // Restore silos with missiles
     for (const silo of this.silos) {
       silo.restoreForWave();
@@ -1570,8 +1673,8 @@ class Game {
     this.persistentABMTrails = [];
     this.persistentICBMTrails = [];
 
-    // Set up wave attacks (authentic arcade: 5 + wave number)
-    this.waveAttacksTotal = 5 + this.wave;
+    // Set up wave attacks (authentic arcade: 2-4 in wave 1, scaling up)
+    this.waveAttacksTotal = 2 + this.wave;
     this.waveAttacksSpawned = 0;
     this.nextAttackTimer = 30;
 
@@ -2115,7 +2218,8 @@ class Game {
       stateTimer: this.stateTimer,
       tallyMissilesLeft: this.tallyMissilesLeft,
       tallyCitiesLeft: this.tallyCitiesLeft,
-      frameCount: this.frameCount
+      frameCount: this.frameCount,
+      colorScheme: this.colorScheme
     };
   }
 }
