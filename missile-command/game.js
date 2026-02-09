@@ -6,6 +6,8 @@ const CONFIG = {
   LOGICAL_WIDTH: 256,
   LOGICAL_HEIGHT: 231,
   SCALE: 3,
+  GROUND_Y: 221,
+  GROUND_HEIGHT: 10,
 
   // Silo positions
   SILO_LEFT_X: 32,
@@ -28,6 +30,8 @@ const CONFIG = {
   ICBM_SPEED_INCREMENT: 0.1,
   MAX_ICBM_SLOTS: 8,
   MIRV_SPLIT_CHANCE: 0.3,
+  MIRV_SPLIT_MIN_Y: 128,
+  MIRV_SPLIT_MAX_Y: 159,
 
   // Explosions
   EXPLOSION_MAX_RADIUS: 13,
@@ -40,6 +44,10 @@ const CONFIG = {
   SMART_BOMB_SPEED: 1.2,
   SMART_BOMB_EVADE_RADIUS: 20,
 
+  // Enemy aircraft
+  BOMBER_SPEED: 0.8,
+  SATELLITE_SPEED: 1.2,
+
   // Scoring
   SCORE_MISSILE: 25,
   SCORE_SMART_BOMB: 125,
@@ -47,6 +55,7 @@ const CONFIG = {
   SCORE_SATELLITE: 100,
   SCORE_ABM_BONUS: 5,
   SCORE_CITY_BONUS: 100,
+  BONUS_CITY_THRESHOLD: 10000,
 
   // Timing
   WAVE_START_DURATION: 120,
@@ -791,7 +800,8 @@ class ICBM {
         this.trail = [{ x: startX, y: startY }];
         this.isMIRV = false;
         this.hasSplit = false;
-        this.splitAltitude = 80 + Math.random() * 80; // 80-160
+        this.splitAltitude = CONFIG.MIRV_SPLIT_MIN_Y +
+            Math.random() * (CONFIG.MIRV_SPLIT_MAX_Y - CONFIG.MIRV_SPLIT_MIN_Y);
     }
 
     update() {
@@ -925,22 +935,81 @@ class Bomber {
     constructor(x, y, vx) {
         this.x = x;
         this.y = y;
-        this.vx = vx; // Horizontal velocity
-        this.bombTimer = 60 + Math.random() * 120; // Drop bomb after 1-3s
+        this.vx = vx;
+        this.active = true;
+        this.bombTimer = 60 + Math.random() * 120;
+        this.bombCooldown = 0;
     }
 
     update() {
         this.x += this.vx;
-        this.bombTimer--;
-        return (this.x < -10 || this.x > 265); // Off screen
+        if (this.bombCooldown > 0) {
+            this.bombCooldown--;
+        } else if (this.bombTimer > 0) {
+            this.bombTimer--;
+        }
     }
 
-    shouldDropBomb() {
-        return this.bombTimer <= 0;
+    canDropBomb() {
+        return this.active && this.bombTimer <= 0 && this.bombCooldown === 0;
+    }
+
+    dropBomb() {
+        if (!this.canDropBomb()) return null;
+
+        // Reset timer for next bomb
+        this.bombTimer = 80 + Math.random() * 100;
+        this.bombCooldown = 10;
+
+        // Choose random target below
+        const targets = [];
+
+        // Target cities
+        const cityX = [24, 48, 72, 184, 208, 232];
+        for (const x of cityX) {
+            targets.push({ x, y: CONFIG.CITY_Y });
+        }
+
+        // Target silos
+        targets.push({ x: CONFIG.SILO_LEFT_X, y: CONFIG.SILO_Y });
+        targets.push({ x: CONFIG.SILO_CENTER_X, y: CONFIG.SILO_Y });
+        targets.push({ x: CONFIG.SILO_RIGHT_X, y: CONFIG.SILO_Y });
+
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        return new EnemyBomb(this.x, this.y, target.x, target.y, 1.0);
     }
 
     getRect() {
         return { x: this.x - 4, y: this.y - 2, w: 8, h: 4 };
+    }
+}
+
+class EnemyBomb {
+    constructor(startX, startY, targetX, targetY, speed) {
+        this.x = startX;
+        this.y = startY;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.speed = speed;
+        this.angle = MathUtils.angle(startX, startY, targetX, targetY);
+        this.vx = Math.cos(this.angle) * speed;
+        this.vy = Math.sin(this.angle) * speed;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Check if hit ground
+        if (this.y >= CONFIG.GROUND_Y) {
+            return 'hit';
+        }
+
+        return null;
+    }
+
+    getRect() {
+        return { x: this.x - 1, y: this.y - 1, w: 2, h: 2 };
     }
 }
 
@@ -953,7 +1022,6 @@ class Satellite {
 
     update() {
         this.x += this.vx;
-        return (this.x < -10 || this.x > 265); // Off screen
     }
 
     getRect() {
@@ -1431,6 +1499,7 @@ class Game {
     this.highScore = 0;
     this.wave = 0;
     this.scoreMultiplier = 1;
+    this.nextBonusCity = CONFIG.BONUS_CITY_THRESHOLD;
 
     // Entities
     this.silos = [];
@@ -1490,12 +1559,33 @@ class Game {
     this.score = 0;
     this.wave = 0;
     this.scoreMultiplier = 1;
+    this.nextBonusCity = CONFIG.BONUS_CITY_THRESHOLD;
 
     // Reset cities and silos
     this.initGame();
 
     // Start first wave
     this.startWave();
+  }
+
+  /**
+   * Check if score crossed bonus city threshold and award if so
+   */
+  checkBonusCity() {
+    if (this.score >= this.nextBonusCity) {
+      // Award bonus city - revive first dead city
+      for (const city of this.cities) {
+        if (!city.alive) {
+          city.alive = true;
+          this.sound.bonusCity();
+          this.nextBonusCity += CONFIG.BONUS_CITY_THRESHOLD;
+          return;
+        }
+      }
+
+      // All cities alive, still advance threshold
+      this.nextBonusCity += CONFIG.BONUS_CITY_THRESHOLD;
+    }
   }
 
   /**
@@ -1581,8 +1671,6 @@ class Game {
     // 30% chance of MIRV on waves 3+
     if (this.wave >= 3 && Math.random() < CONFIG.MIRV_SPLIT_CHANCE) {
       icbm.isMIRV = true;
-      icbm.splitY = CONFIG.MIRV_SPLIT_MIN_Y +
-                    Math.random() * (CONFIG.MIRV_SPLIT_MAX_Y - CONFIG.MIRV_SPLIT_MIN_Y);
     }
 
     this.icbms.push(icbm);
@@ -1824,6 +1912,7 @@ class Game {
 
         // Award points
         this.score += CONFIG.SCORE_MISSILE * this.scoreMultiplier;
+        this.checkBonusCity();
         this.sound.enemyDestroyed();
 
       } else if (hit.type === 'smartBomb') {
@@ -1836,6 +1925,7 @@ class Game {
 
         // Award points
         this.score += CONFIG.SCORE_SMART_BOMB * this.scoreMultiplier;
+        this.checkBonusCity();
         this.sound.enemyDestroyed();
 
       } else if (hit.type === 'bomber') {
@@ -1844,6 +1934,7 @@ class Game {
 
         // Award points
         this.score += CONFIG.SCORE_BOMBER * this.scoreMultiplier;
+        this.checkBonusCity();
         this.sound.enemyDestroyed();
 
       } else if (hit.type === 'satellite') {
@@ -1852,6 +1943,7 @@ class Game {
 
         // Award points
         this.score += CONFIG.SCORE_SATELLITE * this.scoreMultiplier;
+        this.checkBonusCity();
         this.sound.enemyDestroyed();
       }
     }
@@ -1978,18 +2070,20 @@ class Game {
         // Award missile bonus
         this.tallyMissilesLeft--;
         this.score += CONFIG.SCORE_ABM_BONUS * this.scoreMultiplier;
+        this.checkBonusCity();
         this.sound.bonusCount();
 
       } else if (this.tallyCitiesLeft > 0) {
         // Award city bonus
         this.tallyCitiesLeft--;
         this.score += CONFIG.SCORE_CITY_BONUS * this.scoreMultiplier;
+        this.checkBonusCity();
         this.sound.bonusCity();
 
       } else {
         // Tally complete
-        // Increase multiplier (max 6x)
-        if (this.scoreMultiplier < 6) {
+        // Increase multiplier every OTHER wave (max 6x)
+        if (this.wave % 2 === 0 && this.scoreMultiplier < 6) {
           this.scoreMultiplier++;
         }
 
