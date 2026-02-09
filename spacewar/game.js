@@ -21,14 +21,14 @@ const CONFIG = Object.freeze({
     SHIP_ROTATION_SPEED: 0.07,  // Radians per frame
     SHIP_THRUST: 0.15,          // Acceleration per frame when thrusting
     SHIP_MAX_SPEED: 6.0,        // Maximum velocity magnitude
-    SHIP_RADIUS: 8,             // Collision radius
+    SHIP_RADIUS: 28,            // Collision radius (scaled with ship size)
     MAX_FUEL: 256,              // Starting fuel
     FUEL_BURN_RATE: 0.5,        // Fuel consumed per frame while thrusting
 
     // Torpedoes
     TORPEDO_SPEED: 8,           // Absolute speed in pixels per frame
     TORPEDO_LIFETIME: 150,      // Frames before torpedo expires
-    TORPEDO_RADIUS: 2,          // Collision radius
+    TORPEDO_RADIUS: 4,          // Collision radius (scaled for visibility)
     MAX_TORPEDOES_PER_SHIP: 8,  // Maximum active torpedoes per player
     TORPEDO_RELOAD_COOLDOWN: 10, // Frames between shots
 
@@ -177,72 +177,73 @@ const SHAPES = {
     /**
      * NEEDLE ship (Player 1) - elongated 4:1 aspect, sharp nose
      * Nose points RIGHT (0° angle), engine is left
-     * PDP-1 reference: DEC Type 30 precision CRT display codes
+     * Scaled 3.5x for authentic PDP-1 visibility
      */
     NEEDLE: [
         // Sharp nose (right)
-        [8, 0],
-        [7, 1],
-        [6, 1],
+        [28, 0],
+        [24.5, 3.5],
+        [21, 3.5],
         // Upper body
-        [2, 1],
-        [-6, 1],
-        [-8, 2],
+        [7, 3.5],
+        [-21, 3.5],
+        [-28, 7],
         // Engine (left end)
-        [-8, 2],
-        [-8, -2],
+        [-28, 7],
+        [-28, -7],
         // Lower body
-        [-8, -2],
-        [-6, -1],
-        [2, -1],
+        [-28, -7],
+        [-21, -3.5],
+        [7, -3.5],
         // Back to nose
-        [6, -1],
-        [7, -1],
-        [8, 0]
+        [21, -3.5],
+        [24.5, -3.5],
+        [28, 0]
     ],
 
     /**
      * WEDGE ship (Player 2 or AI) - broader 2:1 aspect, blunt edge
      * Blunt edge points RIGHT (0° angle), taper is left
+     * Scaled 3.5x for authentic PDP-1 visibility
      */
     WEDGE: [
         // Blunt nose (right)
-        [6, 3],
-        [6, 2],
-        [6, 1],
-        [6, 0],
-        [6, -1],
-        [6, -2],
-        [6, -3],
+        [21, 10.5],
+        [21, 7],
+        [21, 3.5],
+        [21, 0],
+        [21, -3.5],
+        [21, -7],
+        [21, -10.5],
         // Lower body
-        [3, -2],
-        [-4, -2],
-        [-6, -1],
+        [10.5, -7],
+        [-14, -7],
+        [-21, -3.5],
         // Engine (left end, tapered)
-        [-6, 0],
+        [-21, 0],
         // Upper body
-        [-6, 1],
-        [-4, 2],
-        [3, 2],
-        [6, 3]
+        [-21, 3.5],
+        [-14, 7],
+        [10.5, 7],
+        [21, 10.5]
     ],
 
     /**
      * Thrust flame for NEEDLE (appears at left/engine end)
      */
     NEEDLE_FLAME: [
-        [-8, 1],
-        [-11, 0],
-        [-8, -1]
+        [-28, 3.5],
+        [-38.5, 0],
+        [-28, -3.5]
     ],
 
     /**
      * Thrust flame for WEDGE (appears at left/engine end)
      */
     WEDGE_FLAME: [
-        [-6, 1],
-        [-10, 0],
-        [-6, -1]
+        [-21, 3.5],
+        [-35, 0],
+        [-21, -3.5]
     ],
 
     /**
@@ -1168,7 +1169,7 @@ class Renderer {
         // 2. Draw new frame to persistence (blue-white primary)
         this.persistenceCtx.strokeStyle = CONFIG.COLOR_PRIMARY;
         this.persistenceCtx.fillStyle = CONFIG.COLOR_PRIMARY;
-        this.persistenceCtx.lineWidth = 1.5;
+        this.persistenceCtx.lineWidth = 2;
 
         // Draw starfield
         this.drawStarfield(this.persistenceCtx, gameState.stars);
@@ -1251,14 +1252,14 @@ class Renderer {
         // Draw thrust flame first (behind ship)
         const flame = ship.getFlameVertices();
         if (flame && flame.length > 0) {
-            ctx.strokeStyle = '#ff8800';
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#ffaa00';
+            ctx.lineWidth = 2.5;
             this.drawPolygon(ctx, flame, true);
         }
 
-        // Draw ship
+        // Draw ship - thick bright lines for authentic PDP-1 visibility
         ctx.strokeStyle = CONFIG.COLOR_PRIMARY;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2.5;
         const vertices = ship.getVertices();
         this.drawPolygon(ctx, vertices, true);
     }
