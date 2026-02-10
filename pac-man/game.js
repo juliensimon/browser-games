@@ -7,15 +7,17 @@
 const CONFIG = Object.freeze({
     // Display
     LOGICAL_WIDTH: 224,
-    LOGICAL_HEIGHT: 288,
+    LOGICAL_HEIGHT: 308,     // 288 (maze) + 20 (HUD space)
     SCALE: 3,
     WIDTH: 672,              // 224 * 3
-    HEIGHT: 864,             // 288 * 3
+    HEIGHT: 924,             // 308 * 3
+    HUD_HEIGHT: 20,          // Space reserved at top for HUD
 
     // Grid & Maze
     TILE_SIZE: 8,
     MAZE_COLS: 28,
     MAZE_ROWS: 36,
+    MAZE_OFFSET_Y: 20,       // Maze starts below HUD
 
     // Pac-Man
     BASE_SPEED: 1.25,  // Authentic: 75 pixels/sec at 60fps = 1.25 px/frame (100%)
@@ -351,6 +353,15 @@ const SPRITES = {
             [1,0,0,0,1],
             [1,0,0,0,1],
         ],
+        'B': [
+            [1,1,1,1,0],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,1,1,1,0],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,1,1,1,0],
+        ],
         'C': [
             [0,1,1,1,0],
             [1,0,0,0,1],
@@ -378,6 +389,15 @@ const SPRITES = {
             [1,0,0,0,0],
             [1,1,1,1,1],
         ],
+        'F': [
+            [1,1,1,1,1],
+            [1,0,0,0,0],
+            [1,0,0,0,0],
+            [1,1,1,1,0],
+            [1,0,0,0,0],
+            [1,0,0,0,0],
+            [1,0,0,0,0],
+        ],
         'G': [
             [0,1,1,1,0],
             [1,0,0,0,1],
@@ -404,6 +424,15 @@ const SPRITES = {
             [0,0,1,0,0],
             [0,0,1,0,0],
             [0,1,1,1,0],
+        ],
+        'K': [
+            [1,0,0,0,1],
+            [1,0,0,1,0],
+            [1,0,1,0,0],
+            [1,1,0,0,0],
+            [1,0,1,0,0],
+            [1,0,0,1,0],
+            [1,0,0,0,1],
         ],
         'L': [
             [1,0,0,0,0],
@@ -477,6 +506,15 @@ const SPRITES = {
             [0,0,1,0,0],
             [0,0,1,0,0],
         ],
+        'U': [
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [0,1,1,1,0],
+        ],
         'V': [
             [1,0,0,0,1],
             [1,0,0,0,1],
@@ -485,6 +523,15 @@ const SPRITES = {
             [1,0,0,0,1],
             [0,1,0,1,0],
             [0,0,1,0,0],
+        ],
+        'W': [
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,1,0,1],
+            [1,1,0,1,1],
+            [1,0,0,0,1],
         ],
         'Y': [
             [1,0,0,0,1],
@@ -1621,6 +1668,8 @@ class Renderer {
     }
 
     renderReady(state) {
+        this.ctx.save();
+        this.ctx.translate(0, CONFIG.MAZE_OFFSET_Y);
         this.drawMaze(state.mazeWalls);
         this.drawDots(state.dots, state.powerPelletBlink);
         this.drawPacman(state.pacman);
@@ -1629,11 +1678,14 @@ class Renderer {
             this.drawGhost(ghost);
         }
 
+        this.drawText('READY!', CONFIG.LOGICAL_WIDTH / 2 - 30, 140, CONFIG.COLOR_PACMAN);
+        this.ctx.restore();
         this.drawHUD(state);
-        this.drawText('READY!', CONFIG.LOGICAL_WIDTH / 2 - 30, CONFIG.LOGICAL_HEIGHT / 2, CONFIG.COLOR_PACMAN);
     }
 
     renderPlaying(state) {
+        this.ctx.save();
+        this.ctx.translate(0, CONFIG.MAZE_OFFSET_Y);
         this.drawMaze(state.mazeWalls);
         this.drawDots(state.dots, state.powerPelletBlink);
         this.drawPacman(state.pacman);
@@ -1649,14 +1701,16 @@ class Renderer {
             this.drawSprite(sprite, state.fruit.x - 6, state.fruit.y - 6, color);
         }
 
-        this.drawHUD(state);
-
         for (const popup of state.scorePopups) {
             this.drawScorePopup(popup.score, popup.x, popup.y);
         }
+        this.ctx.restore();
+        this.drawHUD(state);
     }
 
     renderDeath(state) {
+        this.ctx.save();
+        this.ctx.translate(0, CONFIG.MAZE_OFFSET_Y);
         this.drawMaze(state.mazeWalls);
         this.drawDots(state.dots, state.powerPelletBlink);
 
@@ -1699,12 +1753,16 @@ class Renderer {
             this.ctx.restore();
         }
 
+        this.ctx.restore();
         this.drawHUD(state);
     }
 
     renderGameOver(state) {
+        this.ctx.save();
+        this.ctx.translate(0, CONFIG.MAZE_OFFSET_Y);
         this.drawMaze(state.mazeWalls);
-        this.drawText('GAME OVER', CONFIG.LOGICAL_WIDTH / 2 - 45, CONFIG.LOGICAL_HEIGHT / 2, CONFIG.COLOR_TEXT);
+        this.drawText('GAME OVER', CONFIG.LOGICAL_WIDTH / 2 - 45, 140, CONFIG.COLOR_TEXT);
+        this.ctx.restore();
         this.drawHUD(state);
     }
 
@@ -1813,20 +1871,19 @@ class Renderer {
     }
 
     drawHUD(state) {
-        // Draw HUD with black background rectangles only where text will be (not whole top)
+        // Clear full-width HUD zone above the maze
         this.ctx.fillStyle = CONFIG.COLOR_BG;
-        this.ctx.fillRect(6, 0, 60, 18);    // Clear for "1UP" and score
-        this.ctx.fillRect(98, 0, 120, 18);  // Clear for "HIGH SCORE" and value
+        this.ctx.fillRect(0, 0, CONFIG.LOGICAL_WIDTH, CONFIG.MAZE_OFFSET_Y);
 
-        // Top-left corner: "1UP" above score
-        const scoreStr = state.score.toString().padStart(6, '0');  // Pad to 6 digits
+        // Top-left: "1UP" label above score
+        const scoreStr = state.score.toString().padStart(6, '0');
         this.drawText('1UP', 24, 2, CONFIG.COLOR_TEXT);
         this.drawText(scoreStr, 8, 11, CONFIG.COLOR_TEXT);
 
-        // Top-center/right area: "HIGH SCORE" above value
+        // Top-center: "HIGH SCORE" label (always visible) with value
+        this.drawText('HIGH SCORE', 100, 2, CONFIG.COLOR_TEXT);
         if (state.highScore > 0) {
             const highScoreStr = state.highScore.toString().padStart(6, '0');
-            this.drawText('HIGH SCORE', 100, 2, CONFIG.COLOR_TEXT);
             this.drawText(highScoreStr, 108, 11, CONFIG.COLOR_TEXT);
         }
 
