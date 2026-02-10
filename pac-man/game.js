@@ -1813,9 +1813,10 @@ class Renderer {
     }
 
     drawHUD(state) {
-        // Draw HUD with black background rectangles to clear maze overlap
+        // Draw HUD with black background rectangles only where text will be (not whole top)
         this.ctx.fillStyle = CONFIG.COLOR_BG;
-        this.ctx.fillRect(0, 0, CONFIG.LOGICAL_WIDTH, 18);  // Top HUD bar
+        this.ctx.fillRect(6, 0, 60, 18);    // Clear for "1UP" and score
+        this.ctx.fillRect(98, 0, 120, 18);  // Clear for "HIGH SCORE" and value
 
         // Top-left corner: "1UP" above score
         const scoreStr = state.score.toString().padStart(6, '0');  // Pad to 6 digits
