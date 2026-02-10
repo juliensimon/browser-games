@@ -659,8 +659,6 @@ class InputHandler {
 class SoundEngine {
     constructor() {
         this.ctx = null;
-        this.wakkaOscillator = null;
-        this.wakkaGainNode = null;
         this.wakkaPlaying = false;
         this.wakkaToggle = false;
         this.wakkaIntervalId = null;
@@ -682,77 +680,54 @@ class SoundEngine {
 
     startWakka() {
         if (!this.ctx || this.wakkaPlaying) return;
-
         this.wakkaPlaying = true;
         this.wakkaToggle = false;
 
-        // Create oscillator and gain node
-        this.wakkaOscillator = this.ctx.createOscillator();
-        this.wakkaGainNode = this.ctx.createGain();
-
-        // Authentic Pac-Man wakka uses custom waveform, approximated with square wave
-        this.wakkaOscillator.type = 'square';
-        this.wakkaOscillator.frequency.setValueAtTime(293.66, this.ctx.currentTime);
-        this.wakkaGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
-
-        this.wakkaOscillator.connect(this.wakkaGainNode);
-        this.wakkaGainNode.connect(this.ctx.destination);
-        this.wakkaOscillator.start();
-
-        // Authentic wakka: D4+A4 (slightly ascending), then C#4+G#4 (slightly descending)
-        // Alternate every 170ms for authentic tempo
+        // Authentic wakka: discrete "munch" sounds alternating pitch
+        // Triggered every 170ms for rhythmic "wakka wakka" effect
         this.wakkaIntervalId = setInterval(() => {
             if (!this.ctx || !this.wakkaPlaying) return;
-
-            const now = this.ctx.currentTime;
-            this.wakkaToggle = !this.wakkaToggle;
-
-            // First wakka: D4 (293.66 Hz), slightly ascending to D#+A4
-            // Second wakka: C#4 (277.18 Hz), slightly descending from G#4
-            let freq1, freq2;
-            if (this.wakkaToggle) {
-                // First "wak" - D4 base with harmonic
-                freq1 = 293.66;
-                freq2 = 440;  // A4 harmonic
-            } else {
-                // Second "ka" - C#4 base with harmonic
-                freq1 = 277.18;
-                freq2 = 415.30;  // G#4 harmonic
-            }
-
-            // Use the lower frequency as base (authentic arcade sound)
-            this.wakkaOscillator.frequency.setValueAtTime(freq1, now);
-
-            // Pulse the volume with quick attack/decay
-            this.wakkaGainNode.gain.cancelScheduledValues(now);
-            this.wakkaGainNode.gain.setValueAtTime(0.12, now);
-            this.wakkaGainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+            this.playWakkaMunch();
         }, 170);
+    }
+
+    playWakkaMunch() {
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        this.wakkaToggle = !this.wakkaToggle;
+
+        // Create new oscillator for each munch (authentic arcade approach)
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        // Authentic Pac-Man wakka: short munch with pitch drop
+        // Alternates between two pitches: higher "wak" and lower "ka"
+        const startFreq = this.wakkaToggle ? 880 : 660;  // A5 / E5
+        const endFreq = this.wakkaToggle ? 220 : 165;    // A3 / E3
+
+        osc.type = 'square';  // Approximates Namco WSG waveform
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.06);
+
+        // Short, punchy envelope (authentic munch duration ~60ms)
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.08);  // Cleanup slightly after sound ends
     }
 
     stopWakka() {
         if (!this.wakkaPlaying) return;
-
         this.wakkaPlaying = false;
 
         if (this.wakkaIntervalId) {
             clearInterval(this.wakkaIntervalId);
             this.wakkaIntervalId = null;
-        }
-
-        if (this.wakkaOscillator) {
-            try {
-                this.wakkaOscillator.stop();
-            } catch (e) {
-                // Already stopped
-            }
-            this.wakkaOscillator.disconnect();
-            this.wakkaOscillator = null;
-        }
-
-        if (this.wakkaGainNode) {
-            this.wakkaGainNode.disconnect();
-            this.wakkaGainNode = null;
         }
     }
 
