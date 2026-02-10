@@ -963,11 +963,23 @@ class PacMan {
             checkY = nextY - radius;
         }
 
+        // Wrap X coordinate for tunnel (allows movement through screen edges)
+        checkX = MathUtils.wrapX(checkX);
+
         // Also check the perpendicular edges to prevent wall clipping
         const tile = MathUtils.pixelToGrid(checkX, checkY);
 
-        if (tile.col < 0 || tile.col >= CONFIG.MAZE_COLS ||
-            tile.row < 0 || tile.row >= CONFIG.MAZE_ROWS) {
+        // Allow tunnel passage horizontally (rows 14-17 at edges)
+        if (tile.row < 0 || tile.row >= CONFIG.MAZE_ROWS) {
+            return false;
+        }
+
+        // For horizontal tunnel (rows 14-17), col may wrap
+        if (tile.col < 0 || tile.col >= CONFIG.MAZE_COLS) {
+            // Allow if in tunnel rows
+            if (tile.row >= 14 && tile.row <= 17) {
+                return true;
+            }
             return false;
         }
 
@@ -977,9 +989,11 @@ class PacMan {
 
         // Check perpendicular corners if moving diagonally or need edge checking
         if (dir.dx !== 0) {
-            // Check top and bottom edges
-            const topTile = MathUtils.pixelToGrid(checkX, nextY - radius);
-            const bottomTile = MathUtils.pixelToGrid(checkX, nextY + radius);
+            // Check top and bottom edges (wrap X for tunnel)
+            const topX = MathUtils.wrapX(checkX);
+            const bottomX = MathUtils.wrapX(checkX);
+            const topTile = MathUtils.pixelToGrid(topX, nextY - radius);
+            const bottomTile = MathUtils.pixelToGrid(bottomX, nextY + radius);
 
             if (topTile.col >= 0 && topTile.col < CONFIG.MAZE_COLS &&
                 topTile.row >= 0 && topTile.row < CONFIG.MAZE_ROWS) {
@@ -997,9 +1011,11 @@ class PacMan {
         }
 
         if (dir.dy !== 0) {
-            // Check left and right edges
-            const leftTile = MathUtils.pixelToGrid(nextX - radius, checkY);
-            const rightTile = MathUtils.pixelToGrid(nextX + radius, checkY);
+            // Check left and right edges (wrap X for tunnel)
+            const leftX = MathUtils.wrapX(nextX - radius);
+            const rightX = MathUtils.wrapX(nextX + radius);
+            const leftTile = MathUtils.pixelToGrid(leftX, checkY);
+            const rightTile = MathUtils.pixelToGrid(rightX, checkY);
 
             if (leftTile.col >= 0 && leftTile.col < CONFIG.MAZE_COLS &&
                 leftTile.row >= 0 && leftTile.row < CONFIG.MAZE_ROWS) {
