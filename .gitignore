@@ -1,1 +1,8 @@
 .playwright-mcp/
+
+# Temporary and reference images
+*-ref*.png
+*-test.png
+*-fixed.png
+*-final.png
+mc-*.png
