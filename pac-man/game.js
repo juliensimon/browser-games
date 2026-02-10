@@ -1616,11 +1616,12 @@ class Game {
     spawnEntities() {
         this.pacman = new PacMan(CONFIG.PACMAN_START_COL, CONFIG.PACMAN_START_ROW);
 
+        // Spawn ghosts in open corridors around the center
         this.ghosts = [
-            new Ghost('blinky', 12, 14),
-            new Ghost('pinky', 13, 14),
-            new Ghost('inky', 14, 14),
-            new Ghost('clyde', 15, 14)
+            new Ghost('blinky', 13, 11),  // Upper center
+            new Ghost('pinky', 1, 1),     // Top left corner
+            new Ghost('inky', 26, 1),     // Top right corner
+            new Ghost('clyde', 13, 23)    // Lower center
         ];
     }
 
