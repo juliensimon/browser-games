@@ -697,28 +697,47 @@ class SoundEngine {
         const now = this.ctx.currentTime;
         this.wakkaToggle = !this.wakkaToggle;
 
-        // Create new oscillator for each munch (authentic arcade approach)
+        // Create custom 4-bit waveform (Namco WSG authentic)
+        // 4-bit = 16 amplitude levels, creates "crunchy" arcade sound
+        const real = new Float32Array(32);
+        const imag = new Float32Array(32);
+
+        // Generate square-ish wave with 4-bit quantization
+        for (let i = 0; i < 32; i++) {
+            const t = i / 32;
+            // Square wave with 4-bit stepped levels (0-15 mapped to -1 to 1)
+            let value = t < 0.5 ? 1 : -1;
+            // Quantize to 4-bit (16 levels)
+            value = Math.round(value * 7.5) / 7.5;
+            real[i] = value;
+            imag[i] = 0;
+        }
+
+        const wave = this.ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        // Authentic Pac-Man wakka: short munch with pitch drop
-        // Alternates between two pitches: higher "wak" and lower "ka"
-        const startFreq = this.wakkaToggle ? 880 : 660;  // A5 / E5
-        const endFreq = this.wakkaToggle ? 220 : 165;    // A3 / E3
+        osc.setPeriodicWave(wave);
 
-        osc.type = 'square';  // Approximates Namco WSG waveform
-        osc.frequency.setValueAtTime(startFreq, now);
-        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.06);
+        // Authentic Namco WSG wakka: rapid frequency alternation
+        // Base around 440 Hz with quick drops
+        const freq1 = this.wakkaToggle ? 500 : 400;  // Slightly higher pitch
+        const freq2 = this.wakkaToggle ? 380 : 320;  // Quick drop
 
-        // Short, punchy envelope (authentic munch duration ~60ms)
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+        // Use linear ramp for more "steppy" sound (not smooth exponential)
+        osc.frequency.setValueAtTime(freq1, now);
+        osc.frequency.linearRampToValueAtTime(freq2, now + 0.04);
+
+        // Very short, punchy envelope (40ms total)
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
         osc.start(now);
-        osc.stop(now + 0.08);  // Cleanup slightly after sound ends
+        osc.stop(now + 0.05);
     }
 
     stopWakka() {
