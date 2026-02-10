@@ -18,26 +18,38 @@ const CONFIG = Object.freeze({
     MAZE_ROWS: 36,
 
     // Pac-Man
-    PACMAN_SPEED: 1.25,
+    BASE_SPEED: 1.25,  // Authentic: 75 pixels/sec at 60fps = 1.25 px/frame (100%)
     PACMAN_START_COL: 14,
     PACMAN_START_ROW: 26,
     PACMAN_RADIUS: 6,
     PACMAN_MOUTH_ANGLE: 0.25,
     PACMAN_ANIM_INTERVAL: 8,
 
-    // Ghosts
-    GHOST_SPEED: 1.0,
-    GHOST_FRIGHTENED_SPEED: 0.6,
-    GHOST_WIDTH: 14,
-    GHOST_HEIGHT: 14,
-    GHOST_RADIUS: 7,
+    // Speed tables (percentage of BASE_SPEED) — Level 1 values
+    // Authentic Pac-Man speeds by level: [1,2-4,5+] = [80%,90%,100%]
+    PACMAN_SPEED_NORMAL: 0.80,      // Level 1: 80% of base
+    PACMAN_SPEED_FRIGHT: 0.90,      // Level 1: 90% when power pellet active
+    GHOST_SPEED_NORMAL: 0.75,       // Level 1: 75% of base
+    GHOST_SPEED_FRIGHT: 0.50,       // Level 1: 50% when frightened
+    GHOST_SPEED_TUNNEL: 0.40,       // Level 1: 40% in tunnels
+    ELROY1_SPEED: 0.80,             // Level 1: 80% (same as Pac-Man normal)
+    ELROY2_SPEED: 0.85,             // Level 1: 85% (slightly faster)
+
+    // Ghost configuration
+    GHOST_WIDTH: 16,
+    GHOST_HEIGHT: 16,
+    GHOST_RADIUS: 8,
     GHOST_HOUSE_COL: 13,
     GHOST_HOUSE_ROW: 18,
     GHOST_SCATTER_DURATION: 420,
     GHOST_CHASE_DURATION: 1200,
-    GHOST_FRIGHTENED_DURATION: 360,
+    GHOST_FRIGHTENED_DURATIONS: [360, 360, 300, 240, 180, 300, 120, 120, 60, 300, 60, 60, 0],  // By level (frames at 60fps)
     GHOST_RESPAWN_DELAY: 180,
     GHOST_ANIM_INTERVAL: 10,
+
+    // Dot eating pause (authentic arcade timing)
+    DOT_EAT_PAUSE: 1,           // 1 frame pause per normal dot
+    POWER_PELLET_EAT_PAUSE: 3,  // 3 frame pause per power pellet
 
     // Ghost scatter targets (corners of playable maze area)
     BLINKY_SCATTER_COL: 25,
@@ -65,6 +77,21 @@ const CONFIG = Object.freeze({
     // Game rules
     STARTING_LIVES: 3,
     EXTRA_LIFE_SCORE: 10000,
+
+    // Fruit
+    FRUIT_SPAWN_COL: 13,
+    FRUIT_SPAWN_ROW: 20,
+    FRUIT_DURATION: 600,  // 10 seconds
+    FRUIT_SPAWN_DOTS_1: 174,  // When 70 dots eaten (244 - 70)
+    FRUIT_SPAWN_DOTS_2: 74,   // When 170 dots eaten (244 - 170)
+    FRUIT_CHERRY: 'cherry',
+    FRUIT_STRAWBERRY: 'strawberry',
+    FRUIT_ORANGE: 'orange',
+    FRUIT_APPLE: 'apple',
+    SCORE_CHERRY: 100,
+    SCORE_STRAWBERRY: 300,
+    SCORE_ORANGE: 500,
+    SCORE_APPLE: 700,
 
     // Timing
     FPS: 60,
@@ -183,40 +210,44 @@ const SPRITES = {
         [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
     ],
 
-    // Ghost body — 14x14
+    // Ghost body — 16x16 (authentic arcade size)
     GHOST: [
-        [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
-        [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,0,1,1,1,0,0,1,1,1,0,1,1],
-        [1,0,0,0,1,1,1,1,1,1,0,0,0,1],
+        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,2,2,1,1,1,1,1,2,2,1,1,1,1],  // 2 = white (eyes)
+        [1,1,1,2,2,1,1,1,1,1,2,2,1,1,1,1],
+        [1,1,1,3,3,1,1,1,1,1,3,3,1,1,1,1],  // 3 = blue (pupils)
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,1,1,0,0,1,1,0,0,1,1,0,1,1],  // Wavy bottom
+        [1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1],
     ],
 
-    // Frightened ghost — 14x14
+    // Frightened ghost — 16x16 (authentic arcade size)
     GHOST_FRIGHTENED: [
-        [0,0,0,1,1,1,1,1,1,1,1,0,0,0],
-        [0,0,1,1,1,1,1,1,1,1,1,1,0,0],
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,0],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,0,1,0,1,1,0,1,0,1,1,0,1,0],
-        [1,0,1,0,1,1,0,1,0,1,1,0,1,0],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,0,1,1,0,1,1,0,1,1,0,1,1],
-        [1,0,1,0,0,1,0,0,1,0,0,1,0,1],
-        [1,0,0,0,1,1,1,1,1,1,0,0,0,1],
-        [0,1,1,1,0,0,0,0,0,0,1,1,1,0],
+        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1],  // Zigzag eyes
+        [1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1],  // Wavy mouth
+        [1,0,0,1,1,0,0,1,1,0,0,1,1,0,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,1,1,0,0,1,1,0,0,1,1,0,1,1],  // Wavy bottom
+        [1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1],
     ],
 
     // Bitmap font — each glyph is 7 rows x 5 cols
@@ -482,7 +513,100 @@ const SPRITES = {
             [0,0,0,0,0],
             [0,0,1,0,0],
         ],
+        '/': [
+            [0,0,0,0,0],
+            [0,0,0,0,1],
+            [0,0,0,1,0],
+            [0,0,1,0,0],
+            [0,1,0,0,0],
+            [1,0,0,0,0],
+            [0,0,0,0,0],
+        ],
+        '©': [
+            [0,1,1,1,0],
+            [1,0,0,0,1],
+            [1,0,1,1,1],
+            [1,0,1,0,0],
+            [1,0,1,1,1],
+            [1,0,0,0,1],
+            [0,1,1,1,0],
+        ],
     },
+
+    // Ghost eyes (shown when eaten, returning to house) — 6x3
+    EYES_RIGHT: [[0,1,1,0,1,1],[0,1,1,0,1,1],[0,0,0,0,0,0]],
+    EYES_LEFT:  [[1,1,0,1,1,0],[1,1,0,1,1,0],[0,0,0,0,0,0]],
+    EYES_UP:    [[1,1,0,1,1,0],[0,1,0,0,1,0],[0,0,0,0,0,0]],
+    EYES_DOWN:  [[0,0,0,0,0,0],[0,1,0,0,1,0],[1,1,0,1,1,0]],
+
+    // Fruit sprites — 14x14 (simplified iconic shapes)
+    CHERRY: [
+        [0,0,0,0,0,0,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,0,0,1,0,0,0,0,0],
+        [0,0,0,0,1,0,0,0,0,0,0,0,0,0],
+        [0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+        [0,0,1,0,0,0,0,0,0,0,0,0,0,0],
+        [0,1,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,1,1,0,0,0,0,0,0,0,1,1,0,0],
+        [0,1,1,1,0,0,0,0,1,1,1,1,0,0],
+        [0,1,1,1,1,0,0,1,1,1,1,1,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    ],
+
+    STRAWBERRY: [
+        [0,0,0,0,0,1,0,1,0,0,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+    ],
+
+    ORANGE: [
+        [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+    ],
+
+    APPLE: [
+        [0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,0,1,0,0,0,0,0,0,0],
+    ],
 };
 
 // ============================================================================
@@ -566,30 +690,44 @@ class SoundEngine {
         this.wakkaOscillator = this.ctx.createOscillator();
         this.wakkaGainNode = this.ctx.createGain();
 
+        // Authentic Pac-Man wakka uses custom waveform, approximated with square wave
         this.wakkaOscillator.type = 'square';
-        this.wakkaOscillator.frequency.setValueAtTime(200, this.ctx.currentTime);
+        this.wakkaOscillator.frequency.setValueAtTime(293.66, this.ctx.currentTime);
         this.wakkaGainNode.gain.setValueAtTime(0, this.ctx.currentTime);
 
         this.wakkaOscillator.connect(this.wakkaGainNode);
         this.wakkaGainNode.connect(this.ctx.destination);
         this.wakkaOscillator.start();
 
-        // Toggle frequency and pulse volume every 150ms
+        // Authentic wakka: D4+A4 (slightly ascending), then C#4+G#4 (slightly descending)
+        // Alternate every 170ms for authentic tempo
         this.wakkaIntervalId = setInterval(() => {
             if (!this.ctx || !this.wakkaPlaying) return;
 
             const now = this.ctx.currentTime;
             this.wakkaToggle = !this.wakkaToggle;
 
-            // Alternate between 200 Hz and 400 Hz
-            const freq = this.wakkaToggle ? 400 : 200;
-            this.wakkaOscillator.frequency.setValueAtTime(freq, now);
+            // First wakka: D4 (293.66 Hz), slightly ascending to D#+A4
+            // Second wakka: C#4 (277.18 Hz), slightly descending from G#4
+            let freq1, freq2;
+            if (this.wakkaToggle) {
+                // First "wak" - D4 base with harmonic
+                freq1 = 293.66;
+                freq2 = 440;  // A4 harmonic
+            } else {
+                // Second "ka" - C#4 base with harmonic
+                freq1 = 277.18;
+                freq2 = 415.30;  // G#4 harmonic
+            }
 
-            // Pulse the volume
+            // Use the lower frequency as base (authentic arcade sound)
+            this.wakkaOscillator.frequency.setValueAtTime(freq1, now);
+
+            // Pulse the volume with quick attack/decay
             this.wakkaGainNode.gain.cancelScheduledValues(now);
-            this.wakkaGainNode.gain.setValueAtTime(0.15, now);
-            this.wakkaGainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-        }, 150);
+            this.wakkaGainNode.gain.setValueAtTime(0.12, now);
+            this.wakkaGainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+        }, 170);
     }
 
     stopWakka() {
@@ -624,30 +762,31 @@ class SoundEngine {
         const now = this.ctx.currentTime;
         const duration = 6.0;
 
-        // Create oscillator with LFO for frequency modulation
+        // Authentic power pellet siren: oscillating tone
         this.sirenOscillator = this.ctx.createOscillator();
         this.sirenGainNode = this.ctx.createGain();
         this.sirenLFO = this.ctx.createOscillator();
 
         const lfoGain = this.ctx.createGain();
 
-        // Main oscillator - triangle wave
-        this.sirenOscillator.type = 'triangle';
-        this.sirenOscillator.frequency.setValueAtTime(200, now);
+        // Main oscillator - square wave for sharper arcade sound
+        this.sirenOscillator.type = 'square';
+        this.sirenOscillator.frequency.setValueAtTime(220, now);
 
-        // LFO for frequency modulation (creates rising/falling effect)
-        this.sirenLFO.type = 'sine';
-        this.sirenLFO.frequency.setValueAtTime(2, now); // 2 Hz modulation
+        // LFO for frequency modulation (creates wailing siren effect)
+        this.sirenLFO.type = 'triangle';
+        this.sirenLFO.frequency.setValueAtTime(4.5, now); // 4.5 Hz for faster wail
 
-        // LFO depth - modulates between 200-800 Hz
-        lfoGain.gain.setValueAtTime(300, now);
+        // LFO depth - modulates between 180-500 Hz (authentic range)
+        lfoGain.gain.setValueAtTime(160, now);
 
         // Connect LFO to oscillator frequency
         this.sirenLFO.connect(lfoGain);
         lfoGain.connect(this.sirenOscillator.frequency);
 
-        // Volume envelope
-        this.sirenGainNode.gain.setValueAtTime(0.2, now);
+        // Volume envelope - constant volume then fade
+        this.sirenGainNode.gain.setValueAtTime(0.15, now);
+        this.sirenGainNode.gain.setValueAtTime(0.15, now + duration - 0.5);
         this.sirenGainNode.gain.linearRampToValueAtTime(0, now + duration);
 
         // Connect and start
@@ -681,18 +820,19 @@ class SoundEngine {
         if (!this.ctx) return;
 
         const now = this.ctx.currentTime;
-        const duration = 0.3;
+        const duration = 0.5;
 
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc.type = 'sine';
+        // Authentic ghost eaten: rising tone with square wave
+        osc.type = 'square';
 
-        // Ascending tone from 500 to 2000 Hz
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.exponentialRampToValueAtTime(2000, now + duration);
+        // Ascending tone from 200 to 1200 Hz (authentic arcade range)
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + duration);
 
-        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.18, now);
         gain.gain.linearRampToValueAtTime(0, now + duration);
 
         osc.connect(gain);
@@ -706,19 +846,21 @@ class SoundEngine {
         if (!this.ctx) return;
 
         const now = this.ctx.currentTime;
-        const duration = 2.0;
+        const duration = 1.5;
 
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc.type = 'sawtooth';
+        // Authentic death: descending portamento with square wave
+        osc.type = 'square';
 
-        // Descending chromatic scale from 800 to 100 Hz
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + duration);
+        // Descending from C5 (523 Hz) down to C2 (65 Hz) with portamento
+        osc.frequency.setValueAtTime(523, now);
+        osc.frequency.exponentialRampToValueAtTime(65, now + duration);
 
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.setValueAtTime(0.15, now + duration - 0.2);
+        // Constant volume then quick fade
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.setValueAtTime(0.12, now + duration - 0.1);
         gain.gain.linearRampToValueAtTime(0, now + duration);
 
         osc.connect(gain);
@@ -744,7 +886,8 @@ class PacMan {
         // Movement - direction is {dx, dy} where dx/dy are -1, 0, or +1
         this.currentDir = { dx: 0, dy: 0 };
         this.nextDir = { dx: 0, dy: 0 };  // Buffered input
-        this.speed = CONFIG.PACMAN_SPEED;
+        this.speed = CONFIG.BASE_SPEED * CONFIG.PACMAN_SPEED_NORMAL;
+        this.pauseFrames = 0;  // Frame pause when eating dots (authentic arcade timing)
 
         // Animation
         this.mouthOpen = false;
@@ -757,6 +900,12 @@ class PacMan {
 
     update(input, mazeWalls) {
         if (!this.alive) return;
+
+        // Authentic dot-eating pause (1 frame per dot, 3 frames per power pellet)
+        if (this.pauseFrames > 0) {
+            this.pauseFrames--;
+            return;  // Skip movement this frame
+        }
 
         // Read input and buffer next direction
         if (input.isLeft()) {
@@ -916,7 +1065,7 @@ class Ghost {
 
         // Movement
         this.currentDir = { dx: 0, dy: -1 };  // Start moving up
-        this.speed = CONFIG.GHOST_SPEED;
+        this.speed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL;
 
         // AI State
         this.mode = 'scatter';  // 'scatter' | 'chase' | 'frightened' | 'eaten'
@@ -934,23 +1083,57 @@ class Ghost {
         // Eaten state
         this.respawnTimer = 0;
 
+        // Cruise Elroy (Blinky speed boost)
+        this.elroyMode = 0;  // 0=normal, 1=elroy1, 2=elroy2
+
         // Animation
         this.frame = 0;
         this.animTimer = 0;
     }
 
-    update(pacman, mazeWalls, powerPelletActive) {
+    update(pacman, mazeWalls, powerPelletActive, ghosts) {
         if (this.mode === 'eaten') {
-            this.respawnTimer--;
-            if (this.respawnTimer <= 0) {
-                this.mode = 'scatter';
-                this.modeTimer = CONFIG.GHOST_SCATTER_DURATION;
-                this.col = CONFIG.GHOST_HOUSE_COL;
-                this.row = CONFIG.GHOST_HOUSE_ROW;
-                this.x = this.col * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-                this.y = this.row * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
-                this.speed = CONFIG.GHOST_SPEED;
+            // Eyes return to ghost house at high speed
+            const targetCol = CONFIG.GHOST_HOUSE_COL;
+            const targetRow = CONFIG.GHOST_HOUSE_ROW;
+
+            // Check if reached ghost house
+            const dist = MathUtils.manhattanDistance(this.col, this.row, targetCol, targetRow);
+            if (dist <= 1) {
+                // Respawn after delay
+                this.respawnTimer--;
+                if (this.respawnTimer <= 0) {
+                    this.mode = 'scatter';
+                    this.modeTimer = CONFIG.GHOST_SCATTER_DURATION;
+                    this.speed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL;
+                }
+                return;
             }
+
+            // Navigate to ghost house
+            const centerX = this.col * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+            const centerY = this.row * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
+
+            if (Math.abs(this.x - centerX) <= 0.5 && Math.abs(this.y - centerY) <= 0.5) {
+                // At tile center, choose direction toward house
+                this.targetCol = targetCol;
+                this.targetRow = targetRow;
+                const newDir = this.chooseDirection(mazeWalls);
+                if (newDir) {
+                    this.currentDir = newDir;
+                }
+                this.x = centerX;
+                this.y = centerY;
+            }
+
+            // Move at double speed
+            this.x += this.currentDir.dx * (CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL * 2);
+            this.y += this.currentDir.dy * (CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL * 2);
+            this.x = MathUtils.wrapX(this.x);
+
+            const newTile = MathUtils.pixelToGrid(this.x, this.y);
+            this.col = newTile.col;
+            this.row = newTile.row;
             return;
         }
 
@@ -962,14 +1145,14 @@ class Ghost {
             if (this.frightenedTimer <= 0) {
                 // Return to previous mode
                 this.mode = (this.modeIndex % 2 === 0) ? 'scatter' : 'chase';
-                this.speed = CONFIG.GHOST_SPEED;
+                this.speed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL;
             }
             // Flash white in last 2 seconds
             this.flashWhite = this.frightenedTimer < 120 && (Math.floor(this.frightenedTimer / 15) % 2 === 0);
         }
 
-        // Calculate target tile
-        const target = this.calculateTarget(pacman);
+        // Calculate target tile (pass ghosts array for Inky's targeting)
+        const target = this.calculateTarget(pacman, ghosts);
         this.targetCol = target.col;
         this.targetRow = target.row;
 
@@ -988,8 +1171,17 @@ class Ghost {
             this.y = centerY;
         }
 
-        // Move
-        const moveSpeed = (this.mode === 'frightened') ? CONFIG.GHOST_FRIGHTENED_SPEED : this.speed;
+        // Move with tunnel speed reduction
+        let moveSpeed = (this.mode === 'frightened') ?
+            CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_FRIGHT : this.speed;
+
+        // Check if in tunnel zones (left: cols 0-5, right: cols 22-27)
+        // Ghosts slow to 40% base speed in tunnels, Pac-Man unaffected
+        const inTunnel = (this.col <= 5 || this.col >= 22) && (this.row >= 14 && this.row <= 17);
+        if (inTunnel) {
+            moveSpeed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_TUNNEL;
+        }
+
         this.x += this.currentDir.dx * moveSpeed;
         this.y += this.currentDir.dy * moveSpeed;
 
@@ -1012,24 +1204,44 @@ class Ghost {
     updateMode() {
         this.modeTimer--;
         if (this.modeTimer <= 0) {
-            // Cycle through scatter-chase-scatter-chase-chase(permanent)
-            if (this.modeIndex < 3) {
-                this.modeIndex++;
-                if (this.modeIndex % 2 === 0) {
-                    this.mode = 'scatter';
-                    this.modeTimer = CONFIG.GHOST_SCATTER_DURATION;
-                } else {
-                    this.mode = 'chase';
-                    this.modeTimer = CONFIG.GHOST_CHASE_DURATION;
-                }
-            } else {
+            // Authentic arcade timing: 7s/20s/7s/20s/5s/20s/5s/permanent chase
+            // Wave 0: scatter 7s, Wave 1: chase 20s, Wave 2: scatter 7s, Wave 3: chase 20s,
+            // Wave 4: scatter 5s, Wave 5: chase 20s, Wave 6: scatter 5s, Wave 7+: chase indefinitely
+            this.modeIndex++;
+
+            if (this.modeIndex === 1) {
+                // After wave 0 scatter (7s), go to wave 1 chase (20s)
                 this.mode = 'chase';
-                this.modeTimer = CONFIG.GHOST_CHASE_DURATION;
+                this.modeTimer = CONFIG.GHOST_CHASE_DURATION;  // 20s = 1200 frames
+            } else if (this.modeIndex === 2) {
+                // After wave 1 chase, go to wave 2 scatter (7s)
+                this.mode = 'scatter';
+                this.modeTimer = CONFIG.GHOST_SCATTER_DURATION;  // 7s = 420 frames
+            } else if (this.modeIndex === 3) {
+                // After wave 2 scatter, go to wave 3 chase (20s)
+                this.mode = 'chase';
+                this.modeTimer = CONFIG.GHOST_CHASE_DURATION;  // 20s
+            } else if (this.modeIndex === 4) {
+                // After wave 3 chase, go to wave 4 scatter (5s)
+                this.mode = 'scatter';
+                this.modeTimer = 300;  // 5s = 300 frames
+            } else if (this.modeIndex === 5) {
+                // After wave 4 scatter, go to wave 5 chase (20s)
+                this.mode = 'chase';
+                this.modeTimer = CONFIG.GHOST_CHASE_DURATION;  // 20s
+            } else if (this.modeIndex === 6) {
+                // After wave 5 chase, go to wave 6 scatter (5s)
+                this.mode = 'scatter';
+                this.modeTimer = 300;  // 5s
+            } else {
+                // Wave 7+: permanent chase mode
+                this.mode = 'chase';
+                this.modeTimer = 999999;  // Effectively infinite
             }
         }
     }
 
-    calculateTarget(pacman) {
+    calculateTarget(pacman, ghosts) {
         if (this.mode === 'scatter') {
             // Return home corner based on type
             if (this.type === 'blinky') {
@@ -1043,33 +1255,55 @@ class Ghost {
             }
             return { col: CONFIG.CLYDE_SCATTER_COL, row: CONFIG.CLYDE_SCATTER_ROW };
         } else if (this.mode === 'chase') {
-            // Simplified: all ghosts target Pac-Man's position
-            // In the original game, each ghost has unique targeting:
+            // Authentic arcade ghost targeting algorithms:
             // - Blinky targets Pac-Man directly
             // - Pinky targets 4 tiles ahead of Pac-Man
             // - Inky uses complex calculation with Blinky's position
             // - Clyde targets Pac-Man when far, scatter corner when close
 
             if (this.type === 'blinky') {
+                // Blinky: Direct pursuit of Pac-Man
                 return { col: pacman.col, row: pacman.row };
             } else if (this.type === 'pinky') {
-                // Target 4 tiles ahead of Pac-Man
-                const targetCol = pacman.col + pacman.currentDir.dx * 4;
-                const targetRow = pacman.row + pacman.currentDir.dy * 4;
+                // Pinky: Target 4 tiles ahead of Pac-Man's direction
+                // AUTHENTIC BUG: When Pac-Man faces UP, overflow bug adds 4 LEFT as well
+                let targetCol = pacman.col + pacman.currentDir.dx * 4;
+                let targetRow = pacman.row + pacman.currentDir.dy * 4;
+
+                // The famous Pinky UP bug (integer overflow in original Z80 code)
+                if (pacman.currentDir.dy === -1 && pacman.currentDir.dx === 0) {
+                    targetCol -= 4;  // Bug: also targets 4 tiles LEFT
+                }
+
                 return {
                     col: MathUtils.clamp(targetCol, 0, CONFIG.MAZE_COLS - 1),
                     row: MathUtils.clamp(targetRow, 0, CONFIG.MAZE_ROWS - 1)
                 };
             } else if (this.type === 'inky') {
-                // Simplified: target 2 tiles ahead
-                const targetCol = pacman.col + pacman.currentDir.dx * 2;
-                const targetRow = pacman.row + pacman.currentDir.dy * 2;
+                // Inky: Authentic arcade targeting using Blinky's position
+                // 1. Get position 2 tiles ahead of Pac-Man
+                const pivotCol = pacman.col + pacman.currentDir.dx * 2;
+                const pivotRow = pacman.row + pacman.currentDir.dy * 2;
+
+                // 2. Find Blinky
+                const blinky = ghosts ? ghosts.find(g => g.type === 'blinky') : null;
+                if (!blinky) {
+                    // Fallback if Blinky not found (shouldn't happen)
+                    return { col: pivotCol, row: pivotRow };
+                }
+
+                // 3. Calculate vector from Blinky to pivot, then double it
+                const vectorCol = pivotCol - blinky.col;
+                const vectorRow = pivotRow - blinky.row;
+                const targetCol = blinky.col + vectorCol * 2;
+                const targetRow = blinky.row + vectorRow * 2;
+
                 return {
                     col: MathUtils.clamp(targetCol, 0, CONFIG.MAZE_COLS - 1),
                     row: MathUtils.clamp(targetRow, 0, CONFIG.MAZE_ROWS - 1)
                 };
             } else {
-                // Clyde: target Pac-Man if far away, otherwise scatter
+                // Clyde: Chase when far (>8 tiles), retreat to scatter corner when close
                 const dist = MathUtils.manhattanDistance(this.col, this.row, pacman.col, pacman.row);
                 if (dist > 8) {
                     return { col: pacman.col, row: pacman.row };
@@ -1155,11 +1389,13 @@ class Ghost {
         return valid;
     }
 
-    setFrightened() {
+    setFrightened(level = 1) {
         if (this.mode === 'eaten') return;
         this.mode = 'frightened';
-        this.frightenedTimer = CONFIG.GHOST_FRIGHTENED_DURATION;
-        this.speed = CONFIG.GHOST_FRIGHTENED_SPEED;
+        // Level-based frightened duration (authentic arcade progression)
+        const duration = CONFIG.GHOST_FRIGHTENED_DURATIONS[Math.min(level - 1, CONFIG.GHOST_FRIGHTENED_DURATIONS.length - 1)];
+        this.frightenedTimer = duration;
+        this.speed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_FRIGHT;
         this.flashWhite = false;
         // Reverse direction
         this.currentDir = { dx: -this.currentDir.dx, dy: -this.currentDir.dy };
@@ -1168,7 +1404,25 @@ class Ghost {
     setEaten() {
         this.mode = 'eaten';
         this.respawnTimer = CONFIG.GHOST_RESPAWN_DELAY;
-        this.speed = CONFIG.GHOST_SPEED * 2;  // Ghosts move fast when returning
+        this.speed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL * 2;  // Ghosts move fast when returning
+    }
+
+    setElroyMode(dotsRemaining) {
+        // Only Blinky gets Cruise Elroy speed boost
+        if (this.type !== 'blinky') return;
+
+        // Level 1 thresholds: 20 dots for Elroy 1, 10 dots for Elroy 2
+        // (In full game, these thresholds change by level)
+        if (dotsRemaining <= 10) {
+            this.elroyMode = 2;
+            this.speed = CONFIG.BASE_SPEED * CONFIG.ELROY2_SPEED;  // 85% of base
+        } else if (dotsRemaining <= 20) {
+            this.elroyMode = 1;
+            this.speed = CONFIG.BASE_SPEED * CONFIG.ELROY1_SPEED;  // 80% of base
+        } else {
+            this.elroyMode = 0;
+            this.speed = CONFIG.BASE_SPEED * CONFIG.GHOST_SPEED_NORMAL;  // 75% of base
+        }
     }
 
     getColor() {
@@ -1312,19 +1566,52 @@ class Renderer {
     }
 
     renderAttract(state) {
-        this.drawText('PAC-MAN', CONFIG.LOGICAL_WIDTH / 2 - 35, 60, CONFIG.COLOR_PACMAN);
-        this.drawText('PRESS ENTER TO START', CONFIG.LOGICAL_WIDTH / 2 - 60, 120, CONFIG.COLOR_TEXT);
+        // Title
+        this.drawText('PAC-MAN', CONFIG.LOGICAL_WIDTH / 2 - 35, 30, CONFIG.COLOR_PACMAN);
 
-        this.drawText('HIGH SCORE', CONFIG.LOGICAL_WIDTH / 2 - 50, 180, CONFIG.COLOR_TEXT);
-        this.drawText(state.highScore.toString(), CONFIG.LOGICAL_WIDTH / 2 - 20, 195, CONFIG.COLOR_PACMAN);
+        // Character introductions (Namco style)
+        this.drawText('CHARACTER / NICKNAME', CONFIG.LOGICAL_WIDTH / 2 - 75, 55, CONFIG.COLOR_TEXT);
 
-        const ghostY = 240;
-        const ghostColors = [CONFIG.COLOR_BLINKY, CONFIG.COLOR_PINKY, CONFIG.COLOR_INKY, CONFIG.COLOR_CLYDE];
+        const ghostY = 75;
+        const ghostData = [
+            { color: CONFIG.COLOR_BLINKY, name: '-SHADOW', nick: 'BLINKY' },
+            { color: CONFIG.COLOR_PINKY, name: '-SPEEDY', nick: 'PINKY' },
+            { color: CONFIG.COLOR_INKY, name: '-BASHFUL', nick: 'INKY' },
+            { color: CONFIG.COLOR_CLYDE, name: '-POKEY', nick: 'CLYDE' }
+        ];
+
         for (let i = 0; i < 4; i++) {
-            const x = CONFIG.LOGICAL_WIDTH / 2 - 40 + i * 25;
-            this.ctx.fillStyle = ghostColors[i];
-            this.ctx.fillRect(x, ghostY, 8, 8);
+            const y = ghostY + i * 18;
+            // Draw ghost sprite
+            this.drawSprite(SPRITES.GHOST, 20, y - 5, ghostData[i].color);
+            // Draw name and nickname
+            this.drawText(ghostData[i].name, 40, y, ghostData[i].color);
+            this.drawText(ghostData[i].nick, 110, y, ghostData[i].color);
         }
+
+        // Point values
+        const dotY = 155;
+        this.ctx.fillStyle = CONFIG.COLOR_DOT;
+        this.ctx.beginPath();
+        this.ctx.arc(30, dotY + 3, CONFIG.DOT_RADIUS, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.drawText('10 PTS', 45, dotY, CONFIG.COLOR_TEXT);
+
+        this.ctx.fillStyle = CONFIG.COLOR_POWER_PELLET;
+        this.ctx.beginPath();
+        this.ctx.arc(30, dotY + 18, CONFIG.POWER_PELLET_RADIUS, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.drawText('50 PTS', 45, dotY + 15, CONFIG.COLOR_TEXT);
+
+        // High score (with extra space above)
+        this.drawText('HIGH SCORE', CONFIG.LOGICAL_WIDTH / 2 - 50, 205, CONFIG.COLOR_TEXT);
+        this.drawText(state.highScore.toString(), CONFIG.LOGICAL_WIDTH / 2 - 20, 220, CONFIG.COLOR_PACMAN);
+
+        // Press to start
+        this.drawText('PRESS ENTER', CONFIG.LOGICAL_WIDTH / 2 - 54, 250, CONFIG.COLOR_PACMAN);
+
+        // Copyright
+        this.drawText('© 1980 NAMCO', CONFIG.LOGICAL_WIDTH / 2 - 54, 275, CONFIG.COLOR_TEXT);
     }
 
     renderReady(state) {
@@ -1346,9 +1633,14 @@ class Renderer {
         this.drawPacman(state.pacman);
 
         for (const ghost of state.ghosts) {
-            if (ghost.mode !== 'eaten' || ghost.respawnTimer > 0) {
-                this.drawGhost(ghost);
-            }
+            this.drawGhost(ghost);
+        }
+
+        // Draw fruit if active
+        if (state.fruit) {
+            const sprite = this.getFruitSprite(state.fruit.type);
+            const color = this.getFruitColor(state.fruit.type);
+            this.drawSprite(sprite, state.fruit.x - 7, state.fruit.y - 7, color);
         }
 
         this.drawHUD(state);
@@ -1452,24 +1744,91 @@ class Renderer {
     }
 
     drawGhost(ghost) {
-        const sprite = (ghost.mode === 'frightened') ? SPRITES.GHOST_FRIGHTENED : SPRITES.GHOST;
-        this.drawSprite(sprite, ghost.x - 4, ghost.y - 4, ghost.getColor());
+        if (ghost.mode === 'eaten') {
+            // Draw eyes based on direction
+            let eyeSprite = SPRITES.EYES_RIGHT;
+            if (ghost.currentDir.dx < 0) eyeSprite = SPRITES.EYES_LEFT;
+            else if (ghost.currentDir.dy < 0) eyeSprite = SPRITES.EYES_UP;
+            else if (ghost.currentDir.dy > 0) eyeSprite = SPRITES.EYES_DOWN;
+            this.drawSprite(eyeSprite, ghost.x - 3, ghost.y - 1, '#FFFFFF');
+        } else {
+            const sprite = (ghost.mode === 'frightened') ? SPRITES.GHOST_FRIGHTENED : SPRITES.GHOST;
+            this.drawGhostSprite(sprite, ghost.x - 8, ghost.y - 8, ghost.getColor());
+        }
+    }
+
+    drawGhostSprite(sprite, x, y, bodyColor) {
+        // Ghost sprites use multi-color: 1=body, 2=white eyes, 3=blue pupils
+        for (let row = 0; row < sprite.length; row++) {
+            for (let col = 0; col < sprite[row].length; col++) {
+                const pixel = sprite[row][col];
+                if (pixel === 1) {
+                    this.ctx.fillStyle = bodyColor;
+                    this.ctx.fillRect(x + col, y + row, 1, 1);
+                } else if (pixel === 2) {
+                    this.ctx.fillStyle = '#FFFFFF';  // White eyes
+                    this.ctx.fillRect(x + col, y + row, 1, 1);
+                } else if (pixel === 3) {
+                    this.ctx.fillStyle = '#2121DE';  // Blue pupils
+                    this.ctx.fillRect(x + col, y + row, 1, 1);
+                }
+            }
+        }
     }
 
     drawHUD(state) {
-        this.drawText('SCORE', 10, 10, CONFIG.COLOR_TEXT);
-        this.drawText(state.score.toString(), 10, 20, CONFIG.COLOR_TEXT);
+        // Top-left corner: "1UP" centered above score
+        const scoreStr = state.score.toString();
+        const scoreWidth = scoreStr.length * 6;
+        this.drawText('1UP', 8 + Math.floor((scoreWidth - 18) / 2), 0, CONFIG.COLOR_TEXT);
+        this.drawText(scoreStr, 8, 9, CONFIG.COLOR_TEXT);
 
+        // Top-right area: "HIGH SCORE" centered above value
         if (state.highScore > 0) {
-            this.drawText('HIGH', CONFIG.LOGICAL_WIDTH / 2 - 15, 10, CONFIG.COLOR_TEXT);
-            this.drawText(state.highScore.toString(), CONFIG.LOGICAL_WIDTH / 2 - 15, 20, CONFIG.COLOR_TEXT);
+            const highScoreStr = state.highScore.toString();
+            const highScoreWidth = highScoreStr.length * 6;
+            const highScoreX = CONFIG.LOGICAL_WIDTH - 10 - highScoreWidth;
+            this.drawText('HIGH SCORE', highScoreX - 24, 0, CONFIG.COLOR_TEXT);
+            this.drawText(highScoreStr, highScoreX, 9, CONFIG.COLOR_TEXT);
         }
 
-        for (let i = 0; i < state.lives; i++) {
+        // Bottom-left: Lives remaining (in bottom margin area)
+        const livesY = CONFIG.LOGICAL_HEIGHT - 8;
+        for (let i = 0; i < state.lives - 1; i++) {  // Show remaining lives (not including current)
             this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
             this.ctx.beginPath();
-            this.ctx.arc(10 + i * 16, CONFIG.LOGICAL_HEIGHT - 10, 5, 0, Math.PI * 2);
+            this.ctx.arc(10 + i * 16, livesY, 5, 0, Math.PI * 2);
             this.ctx.fill();
+        }
+
+        // Bottom-right: Collected fruits (in bottom margin area)
+        if (state.fruitsCollected && state.fruitsCollected.length > 0) {
+            for (let i = 0; i < Math.min(state.fruitsCollected.length, 7); i++) {
+                const fruitType = state.fruitsCollected[i];
+                const sprite = this.getFruitSprite(fruitType);
+                const x = CONFIG.LOGICAL_WIDTH - 20 - (i * 16);
+                this.drawSprite(sprite, x, CONFIG.LOGICAL_HEIGHT - 16, this.getFruitColor(fruitType));
+            }
+        }
+    }
+
+    getFruitSprite(fruitType) {
+        switch (fruitType) {
+            case CONFIG.FRUIT_CHERRY: return SPRITES.CHERRY;
+            case CONFIG.FRUIT_STRAWBERRY: return SPRITES.STRAWBERRY;
+            case CONFIG.FRUIT_ORANGE: return SPRITES.ORANGE;
+            case CONFIG.FRUIT_APPLE: return SPRITES.APPLE;
+            default: return SPRITES.CHERRY;
+        }
+    }
+
+    getFruitColor(fruitType) {
+        switch (fruitType) {
+            case CONFIG.FRUIT_CHERRY: return '#FF0000';  // Red
+            case CONFIG.FRUIT_STRAWBERRY: return '#FF8888';  // Light red
+            case CONFIG.FRUIT_ORANGE: return '#FFAA00';  // Orange
+            case CONFIG.FRUIT_APPLE: return '#00FF00';  // Green
+            default: return '#FF0000';
         }
     }
 
@@ -1557,6 +1916,7 @@ class Game {
         this.highScore = parseInt(localStorage.getItem('pacmanHighScore')) || 0;
         this.lives = CONFIG.STARTING_LIVES;
         this.nextLifeScore = CONFIG.EXTRA_LIFE_SCORE;
+        this.level = 1;
 
         this.readyTimer = 0;
         this.deathTimer = 0;
@@ -1565,6 +1925,12 @@ class Game {
         this.powerPelletActive = false;
         this.powerPelletTimer = 0;
         this.ghostComboCounter = 0;
+
+        // Fruit system
+        this.fruit = null;  // { type, x, y, timer }
+        this.fruitSpawned1 = false;
+        this.fruitSpawned2 = false;
+        this.fruitsCollected = [];  // Track fruits collected this game
 
         this.powerPelletBlink = 0;
 
@@ -1680,8 +2046,48 @@ class Game {
             if (dotData.type === 3) {
                 this.addScore(CONFIG.SCORE_POWER_PELLET);
                 this.activatePowerPellet();
+                // Authentic: 3 frame pause when eating power pellet
+                this.pacman.pauseFrames = CONFIG.POWER_PELLET_EAT_PAUSE;
             } else {
                 this.addScore(CONFIG.SCORE_DOT);
+                // Authentic: 1 frame pause when eating normal dot
+                this.pacman.pauseFrames = CONFIG.DOT_EAT_PAUSE;
+            }
+
+            // Update Cruise Elroy mode based on dots remaining
+            const blinky = this.ghosts.find(g => g.type === 'blinky');
+            if (blinky) {
+                blinky.setElroyMode(this.dotsRemaining);
+            }
+
+            // Spawn fruit at specific dot counts
+            if (!this.fruitSpawned1 && this.dotsRemaining === CONFIG.FRUIT_SPAWN_DOTS_1) {
+                this.spawnFruit();
+                this.fruitSpawned1 = true;
+            }
+            if (!this.fruitSpawned2 && this.dotsRemaining === CONFIG.FRUIT_SPAWN_DOTS_2) {
+                this.spawnFruit();
+                this.fruitSpawned2 = true;
+            }
+        }
+
+        // Update fruit timer
+        if (this.fruit) {
+            this.fruit.timer--;
+            if (this.fruit.timer <= 0) {
+                this.fruit = null;
+            }
+
+            // Check fruit collection
+            if (this.fruit) {
+                const dist = Math.hypot(this.pacman.x - this.fruit.x, this.pacman.y - this.fruit.y);
+                if (dist < 10) {
+                    const score = this.getFruitScore(this.fruit.type);
+                    this.addScore(score);
+                    this.fruitsCollected.push(this.fruit.type);
+                    this.fruit = null;
+                    this.sound.playGhostEaten();  // Reuse ghost eaten sound for fruit
+                }
             }
         }
 
@@ -1695,7 +2101,7 @@ class Game {
         }
 
         for (const ghost of this.ghosts) {
-            ghost.update(this.pacman, this.mazeWalls, this.powerPelletActive);
+            ghost.update(this.pacman, this.mazeWalls, this.powerPelletActive, this.ghosts);
         }
 
         const hitGhost = CollisionSystem.checkPacmanGhosts(this.pacman, this.ghosts);
@@ -1760,11 +2166,14 @@ class Game {
 
     activatePowerPellet() {
         this.powerPelletActive = true;
-        this.powerPelletTimer = CONFIG.GHOST_FRIGHTENED_DURATION;
+        // Level-based frightened duration (authentic arcade progression)
+        const level = this.level || 1;
+        const duration = CONFIG.GHOST_FRIGHTENED_DURATIONS[Math.min(level - 1, CONFIG.GHOST_FRIGHTENED_DURATIONS.length - 1)];
+        this.powerPelletTimer = duration;
         this.ghostComboCounter = 0;
 
         for (const ghost of this.ghosts) {
-            ghost.setFrightened();
+            ghost.setFrightened(level);
         }
 
         this.sound.stopWakka();
@@ -1787,6 +2196,31 @@ class Game {
         }
     }
 
+    spawnFruit() {
+        // Determine fruit type based on level (simplified - always cherry for level 1)
+        let fruitType = CONFIG.FRUIT_CHERRY;
+        if (this.level >= 2) fruitType = CONFIG.FRUIT_STRAWBERRY;
+        if (this.level >= 3) fruitType = CONFIG.FRUIT_ORANGE;
+        if (this.level >= 5) fruitType = CONFIG.FRUIT_APPLE;
+
+        this.fruit = {
+            type: fruitType,
+            x: CONFIG.FRUIT_SPAWN_COL * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+            y: CONFIG.FRUIT_SPAWN_ROW * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2,
+            timer: CONFIG.FRUIT_DURATION
+        };
+    }
+
+    getFruitScore(fruitType) {
+        switch (fruitType) {
+            case CONFIG.FRUIT_CHERRY: return CONFIG.SCORE_CHERRY;
+            case CONFIG.FRUIT_STRAWBERRY: return CONFIG.SCORE_STRAWBERRY;
+            case CONFIG.FRUIT_ORANGE: return CONFIG.SCORE_ORANGE;
+            case CONFIG.FRUIT_APPLE: return CONFIG.SCORE_APPLE;
+            default: return 100;
+        }
+    }
+
     getState() {
         return {
             state: this.state,
@@ -1799,7 +2233,9 @@ class Game {
             lives: this.lives,
             powerPelletActive: this.powerPelletActive,
             powerPelletBlink: this.powerPelletBlink,
-            scorePopups: this.scorePopups
+            scorePopups: this.scorePopups,
+            fruit: this.fruit,
+            fruitsCollected: this.fruitsCollected
         };
     }
 }
