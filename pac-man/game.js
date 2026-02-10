@@ -977,9 +977,12 @@ class Ghost {
         const centerX = this.col * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
         const centerY = this.row * CONFIG.TILE_SIZE + CONFIG.TILE_SIZE / 2;
 
-        if (Math.abs(this.x - centerX) <= 1 && Math.abs(this.y - centerY) <= 1) {
+        if (Math.abs(this.x - centerX) <= 0.5 && Math.abs(this.y - centerY) <= 0.5) {
             // At tile center, choose new direction
-            this.currentDir = this.chooseDirection(mazeWalls);
+            const newDir = this.chooseDirection(mazeWalls);
+            if (newDir) {
+                this.currentDir = newDir;
+            }
             // Snap to center
             this.x = centerX;
             this.y = centerY;
