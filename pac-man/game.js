@@ -1629,13 +1629,43 @@ class Renderer {
         this.drawMaze(state.mazeWalls);
         this.drawDots(state.dots, state.powerPelletBlink);
 
-        if (state.pacman.deathAnimFrame < 12) {
-            const frame = state.pacman.deathAnimFrame;
-            const radius = CONFIG.PACMAN_RADIUS * (1 - frame / 12);
-            this.ctx.fillStyle = CONFIG.COLOR_PACMAN;
-            this.ctx.beginPath();
-            this.ctx.arc(state.pacman.x, state.pacman.y, radius, 0, Math.PI * 2);
-            this.ctx.fill();
+        // Authentic death animation: freeze → spin → collapse
+        const frame = state.pacman.deathAnimFrame;
+        const FREEZE_FRAMES = 30;
+        const SPIN_FRAMES = 60;
+        const COLLAPSE_FRAMES = 30;
+
+        if (frame < FREEZE_FRAMES) {
+            // Phase 1: Freeze (show closed Pac-Man)
+            this.drawSprite(SPRITES.PACMAN_CLOSED, state.pacman.x - 8, state.pacman.y - 8, CONFIG.COLOR_PACMAN);
+        } else if (frame < FREEZE_FRAMES + SPIN_FRAMES) {
+            // Phase 2: Spin (mouth opens in all 4 directions sequentially)
+            const spinFrame = frame - FREEZE_FRAMES;
+            const direction = Math.floor(spinFrame / 5) % 4;  // Change direction every 5 frames
+
+            this.ctx.save();
+            this.ctx.translate(state.pacman.x, state.pacman.y);
+
+            // Rotate based on direction (0=right, 1=down, 2=left, 3=up)
+            this.ctx.rotate(direction * Math.PI / 2);
+
+            // Alternate between open and closed mouth
+            const sprite = (Math.floor(spinFrame / 2.5) % 2 === 0) ? SPRITES.PACMAN_OPEN : SPRITES.PACMAN_CLOSED;
+            this.drawSprite(sprite, -8, -8, CONFIG.COLOR_PACMAN);
+
+            this.ctx.restore();
+        } else if (frame < FREEZE_FRAMES + SPIN_FRAMES + COLLAPSE_FRAMES) {
+            // Phase 3: Collapse (shrink to nothing)
+            const collapseFrame = frame - FREEZE_FRAMES - SPIN_FRAMES;
+            const scale = 1 - (collapseFrame / COLLAPSE_FRAMES);
+
+            this.ctx.save();
+            this.ctx.translate(state.pacman.x, state.pacman.y);
+            this.ctx.rotate(Math.PI / 2);  // Face down during collapse
+            this.ctx.scale(scale, scale);
+
+            this.drawSprite(SPRITES.PACMAN_OPEN, -8, -8, CONFIG.COLOR_PACMAN);
+            this.ctx.restore();
         }
 
         this.drawHUD(state);
@@ -2109,11 +2139,10 @@ class Game {
     updateDeath() {
         this.deathTimer -= CONFIG.FRAME_TIME;
 
-        if (this.pacman.deathAnimFrame < 12) {
-            if (this.deathTimer % 100 === 0) {
-                this.pacman.deathAnimFrame++;
-            }
-        }
+        // Increment death animation frame (120 total frames for full animation)
+        const TOTAL_DEATH_FRAMES = 120;  // 30 freeze + 60 spin + 30 collapse
+        const elapsed = CONFIG.DEATH_DURATION - this.deathTimer;
+        this.pacman.deathAnimFrame = Math.floor((elapsed / CONFIG.DEATH_DURATION) * TOTAL_DEATH_FRAMES);
 
         if (this.deathTimer <= 0) {
             this.lives--;
