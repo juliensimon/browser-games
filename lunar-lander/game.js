@@ -645,9 +645,9 @@ class Lander {
         // Apply thrust along the lander's current facing direction
         if (this.thrusting && this.fuel > 0) {
             const angleRad = MathUtils.degToRad(this.angle);
-            // Thrust opposes the lander's top direction
+            // Thrust along the lander's "up" axis: local (0,-1) rotated by angle
             // At angle=0 (upright): thrustX=0, thrustY=-power (upward)
-            const thrustX = -Math.sin(angleRad) * CONFIG.LANDER_THRUST_POWER;
+            const thrustX = Math.sin(angleRad) * CONFIG.LANDER_THRUST_POWER;
             const thrustY = -Math.cos(angleRad) * CONFIG.LANDER_THRUST_POWER;
             this.vx += thrustX;
             this.vy += thrustY;
