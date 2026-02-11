@@ -1,0 +1,17 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+canvas {
+    display: block;
+    aspect-ratio: 8/7;
+    max-width: 100vw;
+    max-height: 100vh;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
